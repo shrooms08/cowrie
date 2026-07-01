@@ -5,10 +5,19 @@
 
 import { DENOMINATIONS } from "./config";
 
-// MOCK FX rate. Exposed in the quote response — never hidden in the UI.
-// In production this comes from a Stellar anchor RFQ (SEP-38), not a constant.
-export const ANCHOR_RATE_NGN_PER_USDC = 1700;
+// MOCK FX rate — the SINGLE source of truth for NGN/USDC across the app (invoice
+// quote, buyer pay screen, anchor settle, mock-anchor page, README). Exposed in
+// the UI, never hidden. In production this comes from a Stellar anchor RFQ
+// (SEP-38), not a constant. ~₦1,388 mid-market / ~₦1,400 parallel (July 2026).
+export const ANCHOR_RATE_NGN_PER_USDC = 1400;
 export const ANCHOR_NAME = "Cowrie Anchor (MOCK)";
+export const RATE_LABEL = `₦${ANCHOR_RATE_NGN_PER_USDC.toLocaleString()} / $1`;
+
+/** Derived fiat (NGN) estimate for a whole-USDC amount, at the mock rate. USDC is
+ * the authoritative invoice amount; fiat is display-only (Phase R-refine). */
+export function fiatFromUsdc(usdc: number): number {
+  return Math.round(usdc * ANCHOR_RATE_NGN_PER_USDC);
+}
 
 /** Deterministic merchant id (BN254 field element, decimal). Bound in the proof
  * via extDataHash; both wallet and register compute it identically. */

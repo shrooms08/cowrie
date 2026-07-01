@@ -72,6 +72,7 @@ export default function Page() {
   const [receiptVerifyTx, setReceiptVerifyTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [addrCopied, setAddrCopied] = useState(false);
+  const [recipientCopied, setRecipientCopied] = useState(false);
 
   const update = (next: WalletState) => {
     setW(next);
@@ -919,8 +920,18 @@ export default function Page() {
                 <>
                   <button className="back" onClick={() => setReceiptFor(null)}>← back</button>
                   <h2>Receipt ready</h2>
+                  <div className="recipient-row">
+                    <span className="rr-k">Recipient</span>
+                    <button
+                      className="rr-copy"
+                      onClick={() => { navigator.clipboard?.writeText(receiptRecipient); setRecipientCopied(true); setTimeout(() => setRecipientCopied(false), 1500); }}
+                      title="copy the recipient this receipt is scoped to"
+                    >
+                      {recipientCopied ? "copied ✓" : `${receiptRecipient} ⧉`}
+                    </button>
+                  </div>
                   <p className="hint" style={{ marginBottom: 14 }}>
-                    Bound to <b>{receiptRecipient}</b>. Verified on-chain{" "}
+                    Verified on-chain{" "}
                     {receiptVerifyTx && receiptVerifyTx.length > 12 ? (
                       <a style={{ color: "var(--green)" }} href={`https://stellar.expert/explorer/testnet/tx/${receiptVerifyTx}`} target="_blank" rel="noreferrer">(tx)</a>
                     ) : "✓"}. Only <b>{receiptRecipient}</b> can verify it — handed to anyone else it is rejected.

@@ -161,6 +161,15 @@ body { min-height: 100vh; overflow-x: hidden; }
 .signin-card { grid-column: 1 / -1; max-width: 460px; }
 .switch-merch { font-family: var(--mono); font-size: 11px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px; cursor: pointer; margin-right: 10px; }
 .switch-merch:hover { color: var(--text); border-color: var(--muted2); }
+/* USDC-primary charge input (merchant) */
+.usdc-charge { display: flex; align-items: center; gap: 6px; }
+.usdc-charge .uc-cur { font-size: 26px; font-weight: 700; color: var(--muted2); }
+.usdc-charge .uc-input { flex: 1; }
+/* copyable receipt recipient (buyer) */
+.recipient-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.recipient-row .rr-k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.recipient-row .rr-copy { font-family: var(--mono); font-size: 12px; color: var(--green); background: var(--green-dim); border: 1px solid var(--green-line); border-radius: 8px; padding: 5px 10px; cursor: pointer; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* invoice QR block (merchant awaiting) — Phase R6 */
 .qr-block { display: flex; gap: 16px; align-items: center; margin: 16px 0 4px; }
 .qr-frame { flex: none; padding: 8px; border-radius: 12px; background: #0c0f08; border: 1px solid var(--green-line); line-height: 0; }

@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as chain from "@/lib/contracts";
-import { ANCHOR_RATE_NGN_PER_USDC, fmtNGN, merchantToField, quoteFromNgn } from "@/lib/merchant";
+import { fiatFromUsdc, fmtNGN, merchantToField, RATE_LABEL } from "@/lib/merchant";
 import { absolutePayLink, buildPayLink, makePayId } from "@/lib/paylink";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -30,7 +30,7 @@ export default function MerchantRegister() {
   const [nameInput, setNameInput] = useState("");
   const [signingIn, setSigningIn] = useState(false);
 
-  const [ngnInput, setNgnInput] = useState("42500");
+  const [usdcInput, setUsdcInput] = useState("5"); // USDC is the authoritative amount typed
   const [description, setDescription] = useState("Jollof + drink");
   const [state, setState] = useState<State>("new");
 
@@ -108,7 +108,9 @@ export default function MerchantRegister() {
     setTimeout(() => setAddrCopied(false), 1500);
   }
 
-  const quote = quoteFromNgn(Number(ngnInput) || 0);
+  // USDC-primary: the merchant types whole USDC; NGN is a DERIVED estimate.
+  const usdcAmount = Math.max(0, Math.floor(Number(usdcInput) || 0));
+  const derivedNgn = fiatFromUsdc(usdcAmount);
   // Pay-link carries EVERYTHING the buyer needs — USDC amount, receiving address,
   // merchant name, local-currency amount + code, and the display pay-ID. No
   // server lookup: the buyer parses it straight off the link/QR.
@@ -127,8 +129,8 @@ export default function MerchantRegister() {
 
   // generate the charge (mints a fresh display pay-ID for this invoice)
   function generate() {
-    if (!quote.usdc) return;
-    setInvoice({ ngn: quote.ngn, usdc: quote.usdc, merchant: merchantId, payId: makePayId() });
+    if (!usdcAmount) return;
+    setInvoice({ ngn: derivedNgn, usdc: usdcAmount, merchant: merchantId, payId: makePayId() });
     setState("awaiting");
     setPaidEvent(null);
     setSettle(null);
@@ -235,16 +237,19 @@ export default function MerchantRegister() {
             <>
               <span className="label">New charge</span>
               <div className="field">
-                <label>Amount (NGN)</label>
-                <input className="reg-input big" value={ngnInput} onChange={(e) => setNgnInput(e.target.value.replace(/\D/g, ""))} inputMode="numeric" />
+                <label>Amount (USDC)</label>
+                <div className="usdc-charge">
+                  <span className="uc-cur">$</span>
+                  <input className="reg-input big uc-input" value={usdcInput} onChange={(e) => setUsdcInput(e.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="0" />
+                </div>
               </div>
               <div className="field">
                 <label>For</label>
                 <input className="reg-input" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
               <div className="quote-line">
-                buyer pays <b>${quote.usdc}.00 USDC</b> · settles to <b>{fmtNGN(quote.ngn)}</b>
-                <span className="rate"> @ {quote.rateLabel} · {quote.sep}</span>
+                buyer pays <b>${usdcAmount}.00 USDC</b> · ≈ <b>{fmtNGN(derivedNgn)}</b>
+                <span className="rate"> @ {RATE_LABEL} · anchor quote (SEP-38, mock)</span>
               </div>
               <div className="merch-acct">
                 <span className={"mdot" + (merchantReady ? " ok" : "")} />
@@ -254,7 +259,7 @@ export default function MerchantRegister() {
                   <>{merchantMsg || "setting up merchant account…"}</>
                 )}
               </div>
-              <button className="reg-btn" onClick={generate} disabled={!quote.usdc || !merchantReady}>
+              <button className="reg-btn" onClick={generate} disabled={!usdcAmount || !merchantReady}>
                 {merchantReady ? "Generate charge" : "Setting up merchant account…"}
               </button>
             </>
@@ -299,7 +304,7 @@ export default function MerchantRegister() {
             <div className="paidwrap">
               <div className="shield"><ShieldBig /></div>
               <h2>Paid. Verified clean.</h2>
-              <div className="settled">{settle ? fmtNGN(settle.ngn) : fmtNGN(invoice.usdc * ANCHOR_RATE_NGN_PER_USDC)} settled</div>
+              <div className="settled">{settle ? fmtNGN(settle.ngn) : fmtNGN(fiatFromUsdc(invoice.usdc))} settled</div>
               <div className="charge-sub">${invoice.usdc}.00 USDC · {description}</div>
               {paidEvent && (
                 <p className="txt">
@@ -344,7 +349,7 @@ export default function MerchantRegister() {
             <ul className="seelist good">
               <li>paid: {state === "paid" ? "yes" : "—"}</li>
               <li>clean (ASP-verified on-chain): {state === "paid" ? "yes" : "—"}</li>
-              <li>amount: {invoice ? `$${invoice.usdc} → ${fmtNGN(invoice.usdc * ANCHOR_RATE_NGN_PER_USDC)}` : "—"}</li>
+              <li>amount: {invoice ? `$${invoice.usdc} ≈ ${fmtNGN(fiatFromUsdc(invoice.usdc))}` : "—"}</li>
             </ul>
             <span className="label" style={{ marginTop: 14 }}>What stays private</span>
             <ul className="seelist bad">

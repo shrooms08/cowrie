@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { decodeReceipt, receiptPublicHex, type ReceiptBlob } from "@/lib/receiptProver";
 import * as chain from "@/lib/contracts";
 import { merchantToField } from "@/lib/merchant";
+import { getMerchant } from "@/lib/merchantWallet";
 
 type Result =
   | { kind: "ok"; amount: number; merchant: string; spendTx: string | null }
@@ -16,6 +17,17 @@ export default function VerifyPage() {
   const [working, setWorking] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [signedInMerchant, setSignedInMerchant] = useState<string | null>(null);
+
+  // Pre-fill the recipient with the signed-in merchant identity, so the merchant
+  // verifies with no typing (they're the recipient the receipt is scoped to).
+  useEffect(() => {
+    const m = getMerchant();
+    if (m?.name) {
+      setIdentity(m.name);
+      setSignedInMerchant(m.name);
+    }
+  }, []);
 
   async function verify() {
     setErr(null);
@@ -96,6 +108,9 @@ export default function VerifyPage() {
           <div className="field">
             <label>Verify as (your recipient id)</label>
             <input className="input" value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder="your merchant / recipient id" />
+            {signedInMerchant && identity === signedInMerchant && (
+              <p className="hint" style={{ marginTop: 6 }}>signed in as <b>{signedInMerchant}</b> — pre-filled</p>
+            )}
           </div>
           {err && <div className="err">{err}</div>}
           <button className="btn" disabled={busy || !blobText.trim()} onClick={verify}>
