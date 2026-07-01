@@ -27,9 +27,9 @@ efficient in 26. Dev/test on **testnet** (currently Protocol 27 "Zipper", backwa
 
 ```
             ┌──────────── web (Next.js) ────────────┐
-            │  wallet  │  merchant checkout  │ admin │
-            │   snarkjs in-browser proving (WASM)    │
-            └───┬──────────────┬───────────────┬─────┘
+            │  wallet  │  merchant checkout  │ admin│
+            │   snarkjs in-browser proving (WASM)   │
+            └───┬──────────────┬───────────────┬────┘
                 │ Wallets Kit   │ proof+publics │ settle
                 ▼               ▼               ▼
           Stellar acct     pool contract    mock-anchor
