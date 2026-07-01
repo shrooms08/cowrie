@@ -1,0 +1,19 @@
+{
+  "name": "cowrie-mock-anchor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Mock Stellar anchor: fakes USDC -> local-currency settlement for merchant payouts.",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.ts",
+    "start": "node src/index.ts"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

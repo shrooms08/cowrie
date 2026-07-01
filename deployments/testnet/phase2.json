@@ -1,0 +1,43 @@
+{
+  "network": "testnet",
+  "protocol": 27,
+  "circuit": "policy_tx_2_2",
+  "_note": "contracts.* below is the post-fix deployment (dummy-nullifier skip). The original Phase-2 set is under contracts_phase2_initial.",
+  "contracts": {
+    "verifier": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+    "asp": "CBR723UTZB2YBIV3HGSITKD4QZII3WCJ5U7QRXR7HYDKSNIJSZRIG772",
+    "pool": "CCSCRBKHE257NK4MWSSKELRUV4ACPIFHLCAIB6OLBVMPQOQ3HGIAIESB"
+  },
+  "contracts_phase2_initial": {
+    "verifier": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+    "asp": "CCF3LS2MQJBAIQO2OVXSUZSP7HBB57SRXIWVO5FYVVRPYCBHFXK5ZRTC",
+    "pool": "CAUFAAX4VRCFFPY5H3GFDQTG2IE5NMCBUYLMCSNWE4O5XLXRFXY54NX4"
+  },
+  "dummy_nullifier": "18840403724275375087806719211480066574406617902219092288312412124610213555779",
+  "two_distinct_spends": {
+    "spend_b_payout5": "9ef66013d7f0def5a7c5b85312f5dd0a1ca3a21413415887c6e66ab657e193a2",
+    "spend_c_payout10": "68befa391ed25e762a847e71192f81e1d8e5a08302bc0dffff661285e988f90c",
+    "respend_b_rejected": "Error(Contract, #6) AlreadySpent"
+  },
+  "admin": "GBIL34JMHYXKG3EGNBCYYRMHPWPYUVYY7WH7SBB6SP5LXNMENVCQVZ5C",
+  "tree_levels": 10,
+  "root_history_size": 64,
+  "denominations": [1, 5, 10, 50],
+  "txs": {
+    "deposit_note_a": "7a9f1b95dbef305aee84561c5163ed623db62d5e1969238504d5cc4c7ab05403",
+    "set_blocklist_root": "c4839e06edd3788bb9337db5662a363629ac5fc58509365ae247e40b7e5ac7f0",
+    "spend_success": "22496a8e5a80adc9d47a1008bec61691487687f3691437c606aa4f2d4a51734d"
+  },
+  "spend_cost": {
+    "cpu_instructions": 46796527,
+    "disk_read_bytes": 0,
+    "write_bytes": 188,
+    "resource_fee_stroops": 111821,
+    "fee_charged_stroops": 94641
+  },
+  "rejections": {
+    "asp_root_mismatch": "Error(Contract, #7) AspRootMismatch",
+    "double_spend": "Error(Contract, #6) AlreadySpent",
+    "non_allowlisted": "circom witness generation fails at policyTransaction:144 (no proof producible)"
+  }
+}

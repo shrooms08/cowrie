@@ -1,0 +1,38 @@
+{
+  "network": "testnet",
+  "protocol": 27,
+  "circuit": "paymentReceipt",
+  "claim": "A — proof-of-payment selective disclosure (receipt)",
+  "constraints": 2461,
+  "constraints_nonlinear": 1034,
+  "constraints_linear": 1427,
+  "public_inputs": ["nullifier", "amount", "merchant", "recipient"],
+  "private_inputs": ["privateKey", "blinding", "pathIndices"],
+  "class": "Phase-0 class (Poseidon-preimage shape), ~15x smaller than the 37,616-constraint spend circuit",
+  "verifier": {
+    "id": "CA6BDTDPO6ARRTHVFQ6LTJLP255JZDEPAPISXDAM5P7PF7FYBXRAGCXI",
+    "note": "Same Nethermind groth16 verifier CODE as the spend verifier, re-deployed with the receipt circuit's VK embedded (4 public inputs / 5 IC points). verify_bytes is generic over public-input count, so the code is unchanged; a new deployment is required only because the embedded VK is circuit-specific."
+  },
+  "dev_setup": "DEV-ONLY snarkjs groth16 over pot16 ptau, throwaway entropy. Not a real ceremony.",
+  "real_receipt": {
+    "underlying_spend_tx": "c5341c3f425d (real spend on a throwaway pool/asp pair used only to mint the test SpendEvent)",
+    "throwaway_pool": "CBMJYKQOYJWGPYVLNYCBRGOW3EPYB6GWPNQVVRV2WAQO3JOWWL5JUTEK",
+    "throwaway_asp": "CB2Y7XOOYPGIZU5QZYYLLR7UXPP7L3D3FMXD7GFCYT42TKT6AKRMJAMU",
+    "nullifier_preimage_check": "note_nullifier(secrets, pathIndices=leafIndex) == published SpendEvent nullifier (MATCH)",
+    "on_chain_verify_true_tx": "064d683b109b947337303c48ed948f2f46905ace81146436ef8fbc06c32b440e"
+  },
+  "negative_tests": {
+    "no_secret_non_payer": "witness generation FAILS (nullifier mismatch assert) — a non-payer cannot produce a receipt",
+    "wrong_recipient_SECURITY_CORE": "the R-bound proof presented with R' is REJECTED on-chain (Error(Contract,#0) InvalidProof) — recipient binding is load-bearing; receipts are NOT bearer-replayable",
+    "wrong_amount": "witness generation FAILS (amount is folded into commitment->nullifier; a wrong amount can't reproduce the nullifier)",
+    "wrong_merchant": "the proof presented with a different merchant is REJECTED on-chain (every public input is Groth16-bound)"
+  },
+  "verify_cost": {
+    "cpu_instructions": 31252425,
+    "disk_read_bytes": 0,
+    "write_bytes": 0,
+    "resource_fee_stroops": 35985,
+    "fee_charged_stroops": 26469,
+    "budget_pct": "~31% of the 100,000,000 per-tx budget"
+  }
+}

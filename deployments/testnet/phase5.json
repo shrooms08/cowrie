@@ -1,0 +1,20 @@
+{
+  "network": "testnet",
+  "protocol": 27,
+  "note": "Phase 5 (restyle/ship). LIVE contracts the app + scripts point at (config.ts). Fresh small-tree pool+asp redeployed for a clean post-restyle e2e; verifier reused. Prior deployments remain valid historical records (phase2/3/4.json).",
+  "contracts": {
+    "pool": "CDL5KOHNUTVDSLFW6SRNJPQSE7CNHXBD4WF4T2QS6WQHGA4OULETYZ4B",
+    "asp": "CBUFG5QFNT3DGXDF7X3CUGUMC5ZTSGEBO6NT42SIAWPKQDCCL2NCYVU4",
+    "verifier": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T"
+  },
+  "restyle": "iPhone frame removed; responsive shell (desktop left-sidebar nav, mobile bottom tabs); viewport-filling drifting glow; centered contained column. No change to any contract call, witness builder, snarkjs proving path, proving screen, or event listener.",
+  "post_restyle_regression_check": {
+    "ui_e2e_two_distinct_spends": "PASS",
+    "spend_5_tx": "fbd9c3596b9a587dc42127d76fbd95e7de11e9ee7bd8bc6448887ecce20b22d2",
+    "spend_10_tx": "408f24808a2b4cb6e7fa8acea4dec44e95d22fec9c05827ce5b159fc4171051a",
+    "non_allowlisted": "witness fails at the clean-funds assert (graceful)",
+    "merchant_loop": "register detected the real SpendEvent; negative test (different merchant/amount) did NOT flip",
+    "merchant_spend_tx": "0c5151e78028e012feaffc67c72f35b75bb4c906a19b9692912b14197996c6d5",
+    "next_build": "green (/, /merchant, /mock-anchor, 3 api routes)"
+  }
+}

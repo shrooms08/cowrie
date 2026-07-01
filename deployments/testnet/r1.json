@@ -1,0 +1,46 @@
+{
+  "phase": "R1 — arbitrary-amount Pay UI with coin selection",
+  "date": "2026-06-29",
+  "pool": "CCTBEMP4XHVOKMDV4YV7UUFFV4AC3BR4SS53GAUX3AY4AJI6KM33RJO2",
+  "asp": "CA2PDO76B534G6UNM57POD6UKM4S254TNX75SXGRDUMJXTJ5UB4UWQAU",
+  "verifier": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "notes": "Change-enabled pool (inserts ChangeNote leaves, arbitrary payout). ASP seeded: dummy_asp_leaf @ index 0, blocklist root set. Verifier reused unchanged. config.ts updated to this pair.",
+  "admin": "GBIL34JMHYXKG3EGNBCYYRMHPWPYUVYY7WH7SBB6SP5LXNMENVCQVZ5C",
+  "e2e": {
+    "harness": "playwright chromium, real UI, live testnet contracts",
+    "A_single_plus_change": {
+      "plan": "Paying $25 from your $50 note — $25 change",
+      "paid": "$25.00",
+      "changeChip": "$25.00 change returned privately",
+      "balance_after": "$25.00"
+    },
+    "B_reload_persist_and_respend": {
+      "balance_after_reload": "$25.00",
+      "respend_plan": "$25 from $25 note — exact, no change",
+      "paid": "$25.00 (change note spendable)"
+    },
+    "C1_single_note_rule": {
+      "plan_45": "Paying $45 from your $50 note — $5 change (single-note preference)"
+    },
+    "C2_two_note_combine": {
+      "plan_55": "Paying $55 from your $10 + $50 notes — $5 change",
+      "paid": "$55.00",
+      "changeChip": "$5.00 change returned privately",
+      "balance_after": "$5.00"
+    },
+    "D_cant_cover": {
+      "plan": "Can’t cover $100 with 2 notes. Largest payable now is $5 — top up or use a smaller amount.",
+      "pay_disabled": true,
+      "crashed": false
+    },
+    "E_receipt_on_change_payment": {
+      "generated": true,
+      "on_chain_verified": true,
+      "verify_page": {
+        "verified": true,
+        "displayed_payout": "$30.00 (note amount $50 stays private)",
+        "wrong_recipient": "Not addressed to you (non-replayable)"
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = ["poseidon2", "wgen"]
+
+[workspace.package]
+edition = "2021"

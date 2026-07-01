@@ -1,0 +1,27 @@
+{
+  "name": "cowrie-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cowrie wallet + merchant checkout. Next.js App Router, snarkjs in-browser proving, Stellar Wallets Kit.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "^1.7.0",
+    "@stellar/stellar-sdk": "^16.0.1",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "snarkjs": "^0.7.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "playwright": "^1.61.1",
+    "puppeteer-core": "^25.2.1",
+    "typescript": "^5.6.0"
+  }
+}

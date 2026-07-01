@@ -1,0 +1,17 @@
+[package]
+name = "circuit-keys"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+# external
+anyhow = "1"
+ark-bn254 = { version = "0.6.0", default-features = false, features = ["curve"] }
+ark-ff = { version = "0.6.0", default-features = false }
+ark-groth16 = { version = "0.6.0", default-features = false }
+ark-serialize = { version = "0.6.0", default-features = false }
+num-bigint = { version = "0.4.6" }
+serde_json = { version = "1", features = ["std"] }
+

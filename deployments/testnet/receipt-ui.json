@@ -1,0 +1,26 @@
+{
+  "network": "testnet",
+  "protocol": 27,
+  "phase": "D1+D2 — proof-of-payment receipt wired into the UI",
+  "live_contracts": {
+    "note": "Live demo set the wallet, merchant register, and verify view all share (config.ts). Pool/asp were redeployed fresh here so the live ASP tree stays small enough for reliable event-based path reconstruction (the previous live set's tree had grown across many test runs). The receipt verifier is pool-independent (circuit-specific) and unchanged.",
+    "pool": "CDSQE32Q7W27FTK4CBGBDTHKKKVFL4BZH5OPNMVLKSMXOOTJ4J6LPM6B",
+    "asp": "CC3VMBFWUNSAAFM6OM6TUAJCSMXKMFKJB2W2TB6WPZH6FG6PRSJGHHXJ",
+    "verifier": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+    "receipt_verifier": "CA6BDTDPO6ARRTHVFQ6LTJLP255JZDEPAPISXDAM5P7PF7FYBXRAGCXI"
+  },
+  "ui": {
+    "buyer_generate": "Share-receipt action on the Paid screen and on past-payment activity rows; names a recipient, proves the receipt in-browser (real two-step snarkjs), submits a real on-chain verify tx, outputs a copyable cowrie-receipt: blob.",
+    "recipient_verify": "/verify route (+ nav tab). Pastes a receipt and enters their own recipient id; the proof is verified on-chain against the receipt verifier using THEIR identity as R (never the blob's), then cross-checked against the on-chain SpendEvent. Shows only: paid + amount + merchant, with an explicit not-revealed list."
+  },
+  "live_e2e": {
+    "result": "RECEIPT UI LOOP CLOSED ON LIVE POOL",
+    "real_spend_on_live_pool_tx": "dfb84cfc9529 (full hash on chain)",
+    "nullifier_preimage_check": "MATCH (pathIndices == leafIndex)",
+    "recipient_verify_true_tx": "d73ae2b93200f2099712e8bc532a2d599eb59992a0c0b687afd429ed8ef76f05",
+    "spendevent_cross_check": "MATCH (merchant + amount)",
+    "wrong_recipient": "REJECTED (non-replayable) — a different party verifying with its own id fails",
+    "no_secret": "witness fails",
+    "wrong_amount": "witness fails"
+  }
+}

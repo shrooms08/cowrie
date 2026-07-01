@@ -1,0 +1,51 @@
+{
+  "phase": "R2-0 — REAL USDC deposit + payout rail (throwaway, isolated)",
+  "date": "2026-06-29",
+  "live_demo_pool_untouched": "CCTBEMP4XHVOKMDV4YV7UUFFV4AC3BR4SS53GAUX3AY4AJI6KM33RJO2 (R1) — NOT modified; config.ts unchanged",
+  "usdc_sac_id": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "usdc_issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+  "usdc_decimals": 7,
+  "throwaway_pool": "CD2XR5567IVLTJCP4FSDD7HZQUFZFHP6V45YT5T2EEXBICIZXG4QTJW7",
+  "throwaway_asp": "CDPVCSSHSTWSXYN7QNOZF6KD3YP72DYHLFLKAMT3EBIZERSG42F4YB5I",
+  "verifier_reused": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "crate": "contracts/pool-usdc (separate crate; live cowrie-pool untouched)",
+  "auth_structure": "deposit(from, amount, commitment): the pool calls usdc.transfer(from -> pool), which invokes from.require_auth(). `from` is the deposit tx's source account, so its SOROBAN_CREDENTIALS_SOURCE_ACCOUNT (the tx envelope signature) authorizes the nested transfer — no separate auth-entry signing. payout: the pool calls usdc.transfer(pool -> merchant); the pool's own address is the `from`, authorized implicitly by the pool's invocation frame (a contract moving its own funds needs no external signature).",
+  "e2e": {
+    "onboarding": "friendbot XLM -> changeTrust USDC -> pathPaymentStrictReceive DEX swap -> 100.00 USDC",
+    "deposit": {
+      "tx": "b6c63ee92c66fed16d2112164a4a10184cc6cd9575cd2f2ac4eadf3db0721723",
+      "user_usdc_delta": "-5.00",
+      "pool_usdc_delta": "+5.00",
+      "note_leaf": 0,
+      "cpu_instructions": 16706286,
+      "fee_stroops": 741149,
+      "fee_xlm": 0.0741149
+    },
+    "spend": {
+      "tx": "2c1fd2a06b1cace292bbcf362b2fdf35ae7616106111e00c086e3a7ac6124ef1",
+      "payout": 3,
+      "change": 2,
+      "merchant_usdc_delta": "+3.00",
+      "pool_after": "2.00",
+      "cpu_instructions": 61011948,
+      "fee_stroops": 210914,
+      "fee_xlm": 0.0210914
+    },
+    "accounting": {
+      "pool_usdc": "2.00",
+      "outstanding_notes": "2.00",
+      "balanced": true,
+      "overpay_blocked": "witness generation FAILED (value conservation) — cannot pay more than the input note",
+      "change_note_spent": {
+        "merchant_delta": "+2.00",
+        "pool_final": "0.00"
+      }
+    },
+    "conservation": "deposited $5 -> merchant received $3 + $2 = $5 -> pool nets $0; pool never pays more than deposited",
+    "note": "harness printed NOT CLOSED only due to one spurious intermediate SAC balance read (spend poolDelta showed 0.00 instead of -3.00); absolute accounting (balanced=true, pool_final=0, merchant got full $5) is authoritative and confirms the rail."
+  },
+  "cpu_fee_baseline_comparison": {
+    "spend_with_usdc_payout": "61.0M cpu (vs R0 change-spend 63.8M — payout transfer adds negligible CPU over the Groth16 verify)",
+    "deposit_with_usdc_pull": "16.7M cpu, 0.074 XLM (token transfer + first-time pool balance storage)"
+  }
+}

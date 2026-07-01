@@ -1,0 +1,15 @@
+{
+  "name": "cowrie-circuits",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cowrie Circom circuits (forked from Nethermind privacy-pools): policy transaction + selective disclosure, Poseidon2, SMT.",
+  "scripts": {
+    "compile": "bash scripts/compile.sh",
+    "setup": "bash scripts/setup.sh",
+    "clean": "rm -rf build"
+  },
+  "devDependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.6"
+  }
+}

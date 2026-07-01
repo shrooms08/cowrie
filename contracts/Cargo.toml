@@ -1,0 +1,20 @@
+# Cowrie Soroban contracts workspace.
+# Targets Stellar Protocol 26 (Yardstick) — BN254 host functions via soroban-sdk 26.
+# Build for the Soroban VM target: wasm32v1-none (Protocol 23+).
+[workspace]
+resolver = "2"
+members = ["pool", "pool-usdc", "verifier", "asp", "soroban-utils"]
+
+[workspace.dependencies]
+soroban-sdk = "26"
+soroban-utils = { path = "soroban-utils" }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true

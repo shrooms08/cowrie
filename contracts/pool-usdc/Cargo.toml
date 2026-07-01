@@ -1,0 +1,20 @@
+[package]
+name = "cowrie-pool-usdc"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# THROWAWAY (Phase R2-0): the change-enabled pool + REAL USDC rail. Pulls USDC on
+# deposit and pays USDC out on spend, via the USDC Stellar Asset Contract. Kept as
+# a SEPARATE crate so the live demo pool (cowrie-pool) source + artifact are
+# untouched while we prove the rail in isolation.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+soroban-sdk = { workspace = true, features = ["hazmat-crypto"] }
+soroban-utils = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

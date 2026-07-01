@@ -1,0 +1,24 @@
+{
+  "network": "testnet",
+  "protocol": 27,
+  "note": "Phase 3 wallet UI deployment. Fresh pool+asp where the demo wallet is a depositor; verifier reused from Phase 2.",
+  "contracts": {
+    "pool": "CDW7FIK7WXBQNCPHNGJIRHA7R6MJ6X44MQVLAUCVBS3IFYB7KB2QRUPB",
+    "asp": "CDFHS2COEUGSHVBMNA5TZALVTM42P6FWS66GLX63DRSRSM3JHUQLQR3C",
+    "verifier": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T"
+  },
+  "dummy_nullifier": "18840403724275375087806719211480066574406617902219092288312412124610213555779",
+  "dummy_asp_leaf": "19187717433344121899528298946775778525835347177217043402537944412944308483581",
+  "blocklist_root": "6028266247113828394766328778505083860001642501208832388342836319917635960533",
+  "ui_e2e_proof_run": {
+    "description": "Headless run of the SAME wasm witness builder + two-step prover + contract calls the UI uses.",
+    "seedless_wallet": "GC47WPAO… (friendbot-funded local Stellar key + BN254 identity)",
+    "deposit_5_leaf17": "f3a6ee4614",
+    "deposit_10_leaf18": "e11dc45eef",
+    "spend_5_success": "41f2f4a13985db079aa6af3092052d9a8432a0daa5d3e654ecb95dbd92dc0f00",
+    "spend_10_success": "debdb505f69d3683c2661c6163f1d2d73edb35983de50220e98725d2c11578b1",
+    "two_distinct_spends": "BOTH SUCCEEDED (dummy fix holds through the UI flow)",
+    "non_allowlisted": "witness generation fails at the clean-funds assert (graceful UI error)",
+    "resilience": "txNoAccount / txBadSeq handled by confirm-before-retry (no blind resubmit)"
+  }
+}

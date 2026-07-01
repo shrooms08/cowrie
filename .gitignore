@@ -1,0 +1,35 @@
+# Reference repo (study artifact, not part of Cowrie)
+reference-stellar-private-payments/
+
+# Rust / Soroban
+target/
+**/*.rs.bk
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+*.log
+npm-debug.log*
+
+# Circuit build artifacts & keys (large / generated)
+circuits/build/
+*.r1cs
+*.ptau
+*.zkey
+*.wasm
+# Ship the demo's circuit + witness artifacts so /web runs from a clean clone:
+!web/public/circuits/*.wasm
+!web/public/circuits/policy_final.zkey
+!web/lib/cowrie_wasm/*.wasm
+
+# Env
+.env
+.env.local
+.DS_Store
+
+# Phase 3 web: server-side ASP leaf cache + wasm build outputs
+web/.cowrie-asp-leaves.json
+web/wasm-witness/pkg-node/
+web/wasm-witness/target/

@@ -1,0 +1,44 @@
+{
+  "phase": "R0 — arbitrary-amount kill switch with change notes",
+  "date": "2026-06-29",
+  "circuit_change": false,
+  "circuit": "policy_tx_2_2 (2-in/2-out, value conservation sumIns + publicAmount === sumOuts)",
+  "pool": "CADGU2FFG33GY34TE24D7ULSRBKBGVK4IVVZYLOKT4KKWOU6RUC57JGN",
+  "asp": "CCWKOEE3FJEPUMNVSLSBIF6LKBD3H3DMGJZOIVTD537K26FDCO4TBW5X",
+  "verifier": "CCKJHEGD (BN254 groth16, unchanged)",
+  "tests": {
+    "single_input_plus_change": {
+      "scenario": "deposit $50, pay $25 to merchant, mint $25 change note, burn input",
+      "verify_tx": "ca5dfcf1608dd9d78ee8e163eedcc58bb69c57c3e9cd5ca54aa0a7ef9db6f9bb",
+      "verified_on_chain": true,
+      "change_note_leaf": 4,
+      "change_note_spendable": true
+    },
+    "two_input_plus_change": {
+      "scenario": "deposit $10 + $50, combine both, pay $45, mint $15 change",
+      "verify_tx": "20dcf256540a79",
+      "verified_on_chain": true,
+      "change_note_leaf": 7,
+      "change_note_spendable": true
+    },
+    "value_safety": {
+      "scenario": "forge: pay $25 from $50 but mint $40 change (sumOuts 40 != 25)",
+      "witness_generation": "FAILED (Assert in circuit)",
+      "counterfeiting_possible": false
+    },
+    "clean_funds_preserved": {
+      "result": "change note shares payer identity; spending it passed the ASP membership gate; clean by construction"
+    }
+  },
+  "cost": {
+    "spend_with_change_cpu_instructions": 63783073,
+    "baseline_plain_spend_cpu_instructions": 46800000,
+    "delta_cpu": 16983073,
+    "delta_pct": 36,
+    "fee_charged_stroops": 198611,
+    "fee_charged_xlm": 0.0198611,
+    "write_bytes": 1780,
+    "disk_read_bytes": 0
+  },
+  "note": "Change support is purely witness + pool-insertion. The existing circuit already enforced value conservation, so a change note is just output[0] = (inputs - payout, payer pubkey, fresh blinding) with publicAmount = -payout. The pool now inserts non-zero output commitments as leaves and emits ChangeNote events; the spend-side fixed-denomination check was removed (deposits stay fixed-denom). The +17M CPU vs baseline is the extra Poseidon2 tree insertion for the change leaf."
+}
