@@ -240,6 +240,15 @@ export default function Page() {
     }
     setErr(null);
     try {
+      // Ensure the buyer's fee account exists before submitting the spend. This is
+      // idempotent (skips friendbot when the account already exists) and is needed
+      // because onboarding is no longer auto-run on load — a buyer who arrives
+      // fresh via a pay link hasn't set `funded` in this page session. Reaching
+      // here already implies they hold notes (coin-selection passed), so this never
+      // funds a brand-new casual visitor.
+      const bkp = stellarKeypair(w);
+      await chain.ensureFunded(bkp.publicKey());
+      setFunded(true);
       // ASP vouch (mock service) ensures this wallet identity is allowlisted.
       setStep("vouch");
       const aspLeaf = await wit.aspLeafFor(w.walletPriv);
@@ -843,7 +852,7 @@ export default function Page() {
               {err && <div className="err">{err}</div>}
               <button
                 className="btn"
-                disabled={!funded || !selection || !selection.ok || !merchant.trim()}
+                disabled={!selection || !selection.ok || !merchant.trim()}
                 onClick={doPay}
               >
                 {!merchant.trim()
