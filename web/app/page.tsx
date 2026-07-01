@@ -57,7 +57,10 @@ export default function Page() {
   const [funded, setFunded] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   // Onboarding to the REAL USDC rail (Phase R2-1): XLM + trustline + DEX swap.
-  const [onboard, setOnboard] = useState<"provisioning" | "ready" | "dex-dry">("provisioning");
+  // Starts "idle": onboarding (friendbot XLM + DEX USDC swap) is NOT auto-run on
+  // load — it hits the shared testnet faucet/DEX, so on a public URL we gate it
+  // behind an explicit "Get started" click so casual visitors can't drain it.
+  const [onboard, setOnboard] = useState<"idle" | "provisioning" | "ready" | "dex-dry">("idle");
   const [onboardMsg, setOnboardMsg] = useState<string>("provisioning wallet…");
   const [usdcBal, setUsdcBal] = useState<number | null>(null);
   const [merchantAddr, setMerchantAddr] = useState<string | null>(null);
@@ -138,7 +141,9 @@ export default function Page() {
   useEffect(() => {
     const wallet = loadWallet();
     setW(wallet);
-    onboardWallet(wallet);
+    // NOTE: onboarding is intentionally NOT auto-run here — it is gated behind an
+    // explicit "Get started" button (see the Receive screen) to protect the shared
+    // testnet faucet/DEX on the public deployment.
     // Pay-link from the merchant register — everything rides in the link:
     // /?pay=<merchant>&amt=<usdc>&addr=<G…>&fiat=<local>&cur=<code>&id=<pay-ID>
     const inv = parsePayLink(window.location.search);
@@ -680,6 +685,17 @@ export default function Page() {
                   <span className="mv">${balance.toFixed(2)}</span>
                 </div>
               </div>
+              {onboard === "idle" && (
+                <div className="plan" style={{ marginBottom: 12 }}>
+                  <button className="btn" onClick={() => w && onboardWallet(w)}>
+                    Get started — fund my wallet
+                  </button>
+                  <div className="hint" style={{ marginTop: 8 }}>
+                    Provisions a testnet wallet (friendbot XLM → USDC trustline → a little USDC from the DEX).
+                    Not run automatically, so casual visitors don’t exhaust the shared faucet.
+                  </div>
+                </div>
+              )}
               {onboard === "ready" && <div className="usdc-avail"><span className="ok">rail live ✓</span></div>}
               {onboard === "dex-dry" && (
                 <div className="plan cant" style={{ marginBottom: 12 }}>
@@ -705,6 +721,8 @@ export default function Page() {
               <button className="btn" disabled={onboard !== "ready" || depositing || (usdcBal !== null && usdcBal < depDenom)} onClick={doDeposit}>
                 {depositing
                   ? "Depositing…"
+                  : onboard === "idle"
+                  ? "Fund your wallet to continue"
                   : onboard !== "ready"
                   ? "Onboarding to USDC rail…"
                   : usdcBal !== null && usdcBal < depDenom
