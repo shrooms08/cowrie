@@ -23,6 +23,9 @@ circuits/build/
 !web/public/circuits/*.wasm
 !web/public/circuits/policy_final.zkey
 !web/lib/cowrie_wasm/*.wasm
+# ...including the receipt (selective-disclosure) prover artifacts:
+!web/public/circuits/receipt/*.wasm
+!web/public/circuits/receipt/*.zkey
 
 # Env
 .env
