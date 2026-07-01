@@ -9,12 +9,12 @@ stubs only.
 
 | Tool | Required | Status |
 |---|---|---|
-| Rust | 1.94 | ✅ `rustc 1.94.0` |
-| Soroban VM target | `wasm32v1-none` | ✅ installed |
-| stellar CLI | ≥ 23 | ✅ `27.0.0` |
-| circom | ≥ 2.1 | ✅ `2.2.3` (binary in `~/.local/bin`, amd64 via Rosetta) |
-| snarkjs | ≥ 0.7 | ✅ `0.7.6` (global) |
-| Node | ≥ 20 | ✅ `24.14.0` |
+| Rust | 1.94 |  `rustc 1.94.0` |
+| Soroban VM target | `wasm32v1-none` |  installed |
+| stellar CLI | ≥ 23 |  `27.0.0` |
+| circom | ≥ 2.1 |  `2.2.3` (binary in `~/.local/bin`, amd64 via Rosetta) |
+| snarkjs | ≥ 0.7 |  `0.7.6` (global) |
+| Node | ≥ 20 |  `24.14.0` |
 
 **Target chain:** Protocol 26 "Yardstick" (current mainnet, May 6 2026). BN254 host functions
 (`g1_add`, `g1_mul`, `pairing_check`) + Poseidon2 are live since Protocol 25 "X-Ray" and made
