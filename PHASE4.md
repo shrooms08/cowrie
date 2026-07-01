@@ -1,4 +1,4 @@
-# Phase 4 — Merchant register + mock anchor (PASSED ✅)
+# Phase 4 — Merchant register + mock anchor (PASSED)
 
 The seller side and local-currency settlement, completing the demo loop:
 **buyer pays privately → merchant sees "paid, verified clean" → mock anchor shows
