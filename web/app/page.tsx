@@ -452,7 +452,6 @@ export default function Page() {
   const walletNav = [
     { key: "HOME", label: "Home", icon: <HomeIcon /> },
     { key: "PAY", label: "Pay", icon: <SendIcon stroke="currentColor" /> },
-    { key: "VERIFY", label: "Verify", icon: <ShieldIcon nav /> },
   ];
   // Start a fresh MANUAL pay (clears any loaded invoice so the buyer can type).
   function startManualPay() {
@@ -464,7 +463,6 @@ export default function Page() {
   function goTab(t: string) {
     if (t === "HOME") setScreen("home");
     if (t === "PAY") startManualPay();
-    if (t === "VERIFY") window.location.href = "/verify";
   }
   const goMerchant = () => { window.location.href = "/merchant"; };
   const isActive = (t: string) =>
@@ -929,7 +927,7 @@ export default function Page() {
                   <button className="btn" style={{ marginTop: 12 }} onClick={() => { navigator.clipboard?.writeText(receiptBlob); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>
                     {copied ? "Copied ✓" : "Copy receipt"}
                   </button>
-                  <a className="btn ghost" style={{ marginTop: 10, textAlign: "center", textDecoration: "none", lineHeight: "1.2" }} href="/verify" target="_blank" rel="noreferrer">Open verify view →</a>
+                  <p className="hint" style={{ marginTop: 10 }}>Send this to <b>{receiptRecipient}</b> — they verify it from their register.</p>
                 </>
               )}
             </div>

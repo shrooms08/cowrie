@@ -186,6 +186,8 @@ export default function MerchantRegister() {
         </div>
         <div className="reg-status">
           <a className="reg-role-switch" href="/" title="switch to the buyer wallet">← Buyer wallet</a>
+          {/* Verify a buyer's receipt — the merchant is the recipient who verifies. */}
+          <a className="reg-verify-link" href="/verify" title="verify a customer's payment receipt">Verify receipt</a>
           {merchant && (
             <button className="switch-merch" onClick={switchMerchant} title="forget this merchant (demo re-run)">
               switch merchant

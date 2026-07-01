@@ -182,6 +182,9 @@ body { min-height: 100vh; overflow-x: hidden; }
 /* register -> buyer wallet role switch (symmetric with the wallet's role switch) */
 .reg-role-switch { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; color: var(--muted); text-decoration: none; border: 1px dashed var(--border); border-radius: 8px; padding: 4px 9px; margin-right: 10px; }
 .reg-role-switch:hover { color: var(--text); border-color: var(--muted2); }
+/* Verify receipt — the merchant is the recipient who verifies (Phase R6 fix) */
+.reg-verify-link { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; color: var(--green); text-decoration: none; border: 1px solid var(--green-line); background: var(--green-dim); border-radius: 8px; padding: 4px 9px; margin-right: 10px; }
+.reg-verify-link:hover { color: var(--green); border-color: var(--green); }
 .merch-panel .mp-name { font-size: 17px; font-weight: 700; margin: 6px 0 10px; }
 .mp-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
 .mp-k { font-family: var(--mono); font-size: 11px; color: var(--muted); }

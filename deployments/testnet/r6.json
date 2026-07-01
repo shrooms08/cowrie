@@ -16,5 +16,13 @@
     "display_only": "underlying spend already used the parsed amount+address; payment still correct.",
     "e2e": "R6 MERCHANT-NAME DISPLAY FIX ✓ — paste full URL into merchant field -> invoice auto-loads as \"Minos Akara\" (no raw URL); pay -> Paid to-line \"to Minos Akara · clean\"; activity \"Minos Akara\"; merchant real USDC +15. cleanMerchant unit-tested (7 cases).",
     "fallback_commit": "88de4da (fix is uncommitted working tree)"
+  },
+  "verify_relocation": {
+    "rationale": "Selective disclosure: buyer PAYS -> buyer GENERATES a receipt scoped to the merchant -> the MERCHANT (recipient) VERIFIES. Verifying is a recipient action; the buyer never verifies. Verify was a pre-R5 leftover in the buyer nav.",
+    "removed_from_buyer": "Verify nav entry (walletNav) + its goTab branch + the receipt-ready sheet's 'Open verify view' link. Buyer now has ZERO /verify links (e2e + screenshot: sidenav 'HomePay', verifyLinks=0).",
+    "added_to_merchant": "'Verify receipt' link in the register header -> /verify (reuses the EXISTING verify view; logic untouched). /verify back-link changed to '<- register' -> /merchant.",
+    "logic_untouched": "On-chain receipt verification, recipient binding, and wrong-recipient rejection are unchanged — proven in the R1 receipt-verify e2e (verify as recipient = success showing amount+merchant; verify as a different identity = rejected).",
+    "e2e_note": "Nav relocation verified: buyer sidenav 'HomePay' with 0 verify links; register header 'Verify receipt' -> /verify; clicking it reaches the verify page (back link '<- register'). The full buyer-pay -> receipt -> merchant-verify browser loop was blocked by a transient testnet RPC outage on the spend step ('Paid' heading 280s timeout, twice) — unrelated to this UI/routing change.",
+    "build": "next build green"
   }
 }

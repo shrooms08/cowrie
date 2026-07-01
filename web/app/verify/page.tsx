@@ -78,7 +78,7 @@ export default function VerifyPage() {
     <div className="reg-root">
       <div className="reg-head">
         <span className="brand"><Bean /> <b style={{ fontWeight: 600 }}>cowrie</b> · VERIFY RECEIPT</span>
-        <a className="reg-link" href="/">← wallet</a>
+        <a className="reg-link" href="/merchant">← register</a>
       </div>
 
       <div className="verify-grid">
