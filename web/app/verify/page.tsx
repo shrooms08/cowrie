@@ -11,7 +11,7 @@ type Result =
 
 export default function VerifyPage() {
   const [blobText, setBlobText] = useState("");
-  const [identity, setIdentity] = useState("Buka Express");
+  const [identity, setIdentity] = useState("");
   const [busy, setBusy] = useState(false);
   const [working, setWorking] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -95,7 +95,7 @@ export default function VerifyPage() {
           </div>
           <div className="field">
             <label>Verify as (your recipient id)</label>
-            <input className="input" value={identity} onChange={(e) => setIdentity(e.target.value)} />
+            <input className="input" value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder="your merchant / recipient id" />
           </div>
           {err && <div className="err">{err}</div>}
           <button className="btn" disabled={busy || !blobText.trim()} onClick={verify}>

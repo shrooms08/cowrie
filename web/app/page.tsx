@@ -19,14 +19,15 @@ import { prove, proofToSorobanHex } from "@/lib/prover";
 import { merchantToField } from "@/lib/merchant";
 import { encodeReceipt, proveReceipt, receiptPublicHex } from "@/lib/receiptProver";
 import { selectCoins, type SelectionResult } from "@/lib/coinSelection";
-import { ensureMerchant, merchantKeypair } from "@/lib/merchantWallet";
+import { getMerchant, merchantKeypair } from "@/lib/merchantWallet";
+import { isValidHandle, slugifyHandle } from "@/lib/names";
 
 // The canonical dummy input (slot 0 of a single-note spend): value-less, fixed
 // nullifier the pool ignores. Matches DUMMY_PRIV/DUMMY_BLIND in the Rust crate.
 const DUMMY_PRIV = "9001";
 const DUMMY_BLIND = "9002";
 
-type Screen = "home" | "receive" | "pay";
+type Screen = "home" | "receive" | "pay" | "claim";
 type ProveStep = "idle" | "vouch" | "build" | "witness" | "prove" | "submit" | "done";
 
 const Bean = ({ s = 20 }: { s?: number }) => (
@@ -55,7 +56,8 @@ export default function Page() {
   const [depDenom, setDepDenom] = useState<Denom>(5);
   const [depositing, setDepositing] = useState(false);
 
-  const [merchant, setMerchant] = useState("Buka Express");
+  const [merchant, setMerchant] = useState("");
+  const [claimInput, setClaimInput] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [step, setStep] = useState<ProveStep>("idle");
   const [paid, setPaid] = useState<{ amount: number; change: number; merchant: string; hash: string; payment: Payment } | null>(null);
@@ -63,7 +65,7 @@ export default function Page() {
 
   // ---- receipt (selective disclosure) ----
   const [receiptFor, setReceiptFor] = useState<Payment | null>(null);
-  const [receiptRecipient, setReceiptRecipient] = useState("Buka Express");
+  const [receiptRecipient, setReceiptRecipient] = useState("");
   const [receiptStep, setReceiptStep] = useState<"idle" | "proving" | "verifying" | "done">("idle");
   const [receiptBlob, setReceiptBlob] = useState<string | null>(null);
   const [receiptVerifyTx, setReceiptVerifyTx] = useState<string | null>(null);
@@ -74,6 +76,14 @@ export default function Page() {
     setW(next);
     saveWallet(next);
   };
+
+  // Claim a custom "<name>.cowrie" identity (local-only; no name registry).
+  function claimName() {
+    if (!w || !isValidHandle(claimInput)) return;
+    update({ ...w, handle: slugifyHandle(claimInput) });
+    setClaimInput("");
+    setScreen("home");
+  }
 
   function resetDemo() {
     // Fresh seedless wallet (new key + identity + empty notes). Handy to re-run
@@ -287,12 +297,17 @@ export default function Page() {
 
       setStep("submit");
       // Resolve the merchant's Stellar address that receives the real USDC
-      // payout: from the pay-link when present, else the local demo merchant
-      // (onboarded to receive — friendbot XLM + USDC trustline).
+      // payout: from the pay-link when present, else a merchant created locally
+      // via the merchant sign-in. There is NO hardcoded/default merchant — if no
+      // address is available, the payment cannot route.
       setWorking("preparing merchant payout address…");
       let payTo = merchantAddr;
       if (!payTo) {
-        const mkp = merchantKeypair(ensureMerchant());
+        const localMerchant = getMerchant();
+        if (!localMerchant) {
+          throw new Error("No merchant to pay — open a merchant invoice link, or create a merchant on /merchant.");
+        }
+        const mkp = merchantKeypair(localMerchant);
         await chain.ensureFunded(mkp.publicKey());
         await chain.establishUsdcTrustline(mkp);
         payTo = mkp.publicKey();
@@ -475,7 +490,7 @@ export default function Page() {
             </div>
 
             <div className="balance-row">
-              <span className="label">Cowrie private balance · in the pool</span>
+              <span className="label">Cowrie private balance</span>
               <button
                 className="iconbtn"
                 style={{ width: 22, height: 22, border: "none", background: "none" }}
@@ -504,7 +519,7 @@ export default function Page() {
                 <span className="wc-bal">{usdcBal === null ? "…" : `$${usdcBal.toFixed(2)}`}</span>
               </div>
               <div className="wc-addr">
-                <span className="wc-k">{w.handle}.cowrie account</span>
+                <span className="wc-k">{w.handle}.cowrie</span>
                 <button
                   className="wc-copy"
                   onClick={() => {
@@ -516,9 +531,6 @@ export default function Page() {
                 >
                   {addrCopied ? "copied ✓" : `${kp.publicKey().slice(0, 6)}…${kp.publicKey().slice(-4)} ⧉`}
                 </button>
-              </div>
-              <div className="wc-hint">
-                real testnet USDC in your account. <b>Deposit</b> moves it into your private Cowrie balance above.
               </div>
             </div>
 
@@ -541,6 +553,12 @@ export default function Page() {
             <div className="idcard">
               <div className="dot" />
               <span className="label">Cowrie ID</span>
+              <button
+                className="claim-link"
+                onClick={() => { setClaimInput(w.handle); setScreen("claim"); }}
+              >
+                claim name
+              </button>
               <div className="handle">
                 {w.handle}
                 <span className="suffix">.cowrie</span>
@@ -584,6 +602,42 @@ export default function Page() {
             </div>
 
           </div>
+
+          {screen === "claim" && (
+            <div className="sheet">
+              <button className="back" onClick={() => setScreen("home")}>← back</button>
+              <h2>Claim your name</h2>
+              <p className="hint" style={{ marginBottom: 18 }}>
+                Choose your Cowrie name. It becomes your <b>&lt;name&gt;.cowrie</b> identity, stored on this
+                device. In this demo a name is a <b>local claim</b> — a production version would use an on-chain
+                name registry for global uniqueness.
+              </p>
+              <div className="field">
+                <label>Your name</label>
+                <div className="claim-entry">
+                  <input
+                    className="input"
+                    value={claimInput}
+                    onChange={(e) => setClaimInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && claimName()}
+                    placeholder="yourname"
+                    autoFocus
+                  />
+                  <span className="claim-suffix">.cowrie</span>
+                </div>
+              </div>
+              <div className="claim-preview">
+                {claimInput.trim() && isValidHandle(claimInput) ? (
+                  <>you’ll be <b>{slugifyHandle(claimInput)}.cowrie</b></>
+                ) : (
+                  <span className="muted">2–20 letters, digits or hyphens</span>
+                )}
+              </div>
+              <button className="btn" disabled={!isValidHandle(claimInput)} onClick={claimName}>
+                {isValidHandle(claimInput) ? `Claim ${slugifyHandle(claimInput)}.cowrie` : "Enter a name"}
+              </button>
+            </div>
+          )}
 
           {screen === "receive" && (
             <div className="sheet">
@@ -648,7 +702,7 @@ export default function Page() {
               <h2>Pay a merchant</h2>
               <div className="field">
                 <label>Merchant</label>
-                <input className="input" value={merchant} onChange={(e) => setMerchant(e.target.value)} />
+                <input className="input" value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="open a merchant invoice link, or type a name" />
               </div>
               <div className="field">
                 <label>Amount (USDC)</label>
@@ -706,10 +760,10 @@ export default function Page() {
               {err && <div className="err">{err}</div>}
               <button
                 className="btn"
-                disabled={!funded || !selection || !selection.ok}
+                disabled={!funded || !selection || !selection.ok || !merchant.trim()}
                 onClick={doPay}
               >
-                {selection && selection.ok ? `Pay $${parsedAmount}` : "Enter an amount"}
+                {!merchant.trim() ? "Enter a merchant" : selection && selection.ok ? `Pay $${parsedAmount}` : "Enter an amount"}
               </button>
             </div>
           )}
@@ -781,7 +835,7 @@ export default function Page() {
                   </p>
                   <div className="field">
                     <label>Disclose to (recipient)</label>
-                    <input className="input" value={receiptRecipient} onChange={(e) => setReceiptRecipient(e.target.value)} placeholder="e.g. Buka Express, or an auditor id" />
+                    <input className="input" value={receiptRecipient} onChange={(e) => setReceiptRecipient(e.target.value)} placeholder="e.g. a merchant name or an auditor id" />
                   </div>
                   {err && <div className="err">{err}</div>}
                   <button className="btn" disabled={!funded} onClick={doGenerateReceipt}>Generate receipt</button>
@@ -819,20 +873,9 @@ export default function Page() {
           )}
         </div>
 
-        <div className="honesty">
-          <b>Demo honesty:</b> seedless = a local Stellar key is auto-provisioned, friendbot-funded, and
-          given a USDC trustline + a DEX-swapped starting balance (production uses passkey/social login).
-          <b> Real now:</b> USDC transfer-in on deposit and the merchant payout on spend are <b>real on-chain
-          USDC</b> via the USDC SAC (deposit pulls from your wallet; payout sends to the merchant; change
-          stays a private note). On-chain the balance is <b>always</b> hidden — the eye toggle only hides the
-          <b>local</b> display. <b>Still mocked:</b> the ASP admin (a server route stands in for the
-          attestation service) and the fiat anchor (SEP quote/settle). Trusted setup is dev-only.
-          Deposits use fixed denominations {`{1,5,10,50}`}; payments are <b>any amount</b> — the wallet picks
-          the note(s) and returns the remainder as a private <b>change note</b>.
-          <span className="reset-row">
-            <a href="/merchant">merchant register →</a>
-            <button className="reset-btn" onClick={resetDemo}>reset demo</button>
-          </span>
+        <div className="foot-controls">
+          <a href="/merchant">merchant register →</a>
+          <button className="reset-btn" onClick={resetDemo}>reset demo</button>
         </div>
 
         <nav className="bottom-tabs">

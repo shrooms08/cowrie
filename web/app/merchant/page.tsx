@@ -9,6 +9,7 @@ import {
   merchantKeypair,
   type MerchantWallet,
 } from "@/lib/merchantWallet";
+import { isValidBusinessName, normalizeBusinessName } from "@/lib/names";
 
 type State = "new" | "awaiting" | "paid";
 interface Settlement {
@@ -24,7 +25,7 @@ export default function MerchantRegister() {
   // Seedless merchant identity (Phase R3). Null until the user "signs in" by
   // claiming a business name; then a real receiving account is provisioned.
   const [merchant, setMerchant] = useState<MerchantWallet | null>(null);
-  const [nameInput, setNameInput] = useState("Test Merchant");
+  const [nameInput, setNameInput] = useState("");
   const [signingIn, setSigningIn] = useState(false);
 
   const [ngnInput, setNgnInput] = useState("42500");
@@ -76,9 +77,9 @@ export default function MerchantRegister() {
 
   // "Sign in": claim a name -> provision a receiving account for it.
   async function doSignIn() {
-    if (!nameInput.trim() || signingIn) return;
+    if (signingIn || !isValidBusinessName(nameInput)) return;
     setSigningIn(true);
-    const m = createMerchant(nameInput);
+    const m = createMerchant(normalizeBusinessName(nameInput));
     setMerchant(m);
     await onboardMerchant(m);
     setSigningIn(false);
@@ -197,12 +198,15 @@ export default function MerchantRegister() {
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && doSignIn()}
-                placeholder="e.g. Test Merchant"
+                placeholder="your business name"
                 autoFocus
               />
+              {nameInput.trim() && !isValidBusinessName(nameInput) && (
+                <p className="hint" style={{ marginTop: 6 }}>2–40 characters (letters, digits, spaces).</p>
+              )}
             </div>
             {merchantMsg && signingIn && <div className="merch-acct"><span className="mdot" /> {merchantMsg}</div>}
-            <button className="reg-btn" onClick={doSignIn} disabled={signingIn || !nameInput.trim()}>
+            <button className="reg-btn" onClick={doSignIn} disabled={signingIn || !isValidBusinessName(nameInput)}>
               {signingIn ? "Provisioning account…" : "Create merchant account"}
             </button>
           </div>

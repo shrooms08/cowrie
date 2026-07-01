@@ -27,17 +27,13 @@ export function getMerchant(): MerchantWallet | null {
   }
 }
 
-/** Provision a fresh merchant identity for `name` (new receiving account). */
+/** Provision a fresh merchant identity for `name` (new receiving account).
+ * Callers MUST pass a validated non-empty name (see lib/names.ts) — there is no
+ * default/placeholder merchant. */
 export function createMerchant(name: string): MerchantWallet {
-  const m: MerchantWallet = { stellarSecret: Keypair.random().secret(), name: name.trim() || "Merchant", createdAt: Date.now() };
+  const m: MerchantWallet = { stellarSecret: Keypair.random().secret(), name: name.trim(), createdAt: Date.now() };
   if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(m));
   return m;
-}
-
-/** Get the current merchant, or create one with a default name (buyer-side
- * fallback for a manual payment with no pay-link address). */
-export function ensureMerchant(defaultName = "Buka Express"): MerchantWallet {
-  return getMerchant() ?? createMerchant(defaultName);
 }
 
 export function saveMerchant(m: MerchantWallet): void {
