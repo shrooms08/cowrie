@@ -124,6 +124,15 @@ body { min-height: 100vh; overflow-x: hidden; }
 .plan.cant { border-color: #5c2b2e; background: var(--red-bg); color: var(--red); font-family: var(--mono); font-size: 12.5px; line-height: 1.55; }
 .change-chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--green-line); background: var(--green-dim); color: var(--green); font-size: 13px; font-weight: 600; }
 
+/* USDC rail onboarding (Phase R2-1) */
+.usdc-avail { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.usdc-avail b { color: var(--text); }
+.usdc-avail .ok { color: var(--green); }
+.merch-acct { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--muted); margin: 4px 0 12px; }
+.merch-acct .mono { color: var(--text); }
+.merch-acct .mdot, .mdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted2); flex: none; }
+.merch-acct .mdot.ok, .mdot.ok { background: var(--green); box-shadow: 0 0 8px var(--green-line); }
+
 .err { background: var(--red-bg); color: var(--red); border: 1px solid #5c2b2e; border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 10px 0; font-family: var(--mono); }
 .hint { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.5; }
 

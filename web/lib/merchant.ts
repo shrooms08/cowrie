@@ -31,10 +31,11 @@ export interface Quote {
   sep: string;
 }
 
-/** Given a requested NGN amount, snap to a payable USDC denomination and quote
- * the effective NGN at the (exposed) rate. */
+/** Given a requested NGN amount, quote the USDC to charge at the (exposed) rate.
+ * Payments are arbitrary-amount (Phase R1+), so we charge whole USDC dollars —
+ * the buyer's wallet covers it with 1–2 notes and returns change. */
 export function quoteFromNgn(ngnRequested: number): Quote {
-  const usdc = snapDenomination(ngnRequested / ANCHOR_RATE_NGN_PER_USDC);
+  const usdc = Math.max(1, Math.round(ngnRequested / ANCHOR_RATE_NGN_PER_USDC));
   return {
     usdc,
     ngn: usdc * ANCHOR_RATE_NGN_PER_USDC,

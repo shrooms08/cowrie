@@ -1,0 +1,29 @@
+{
+  "phase": "R2-1 — USDC rail migrated to canonical live pool",
+  "date": "2026-07-01",
+  "fallback_commit": "4bd58c90ca66dde4a57f68fde790019c4b4e6401",
+  "canonical_pool": "CBTOBHYHYVKTQLSNQQ3LPEVWMPQ5C4B2HEP6FQJR4YYM5HCDXABKX5CZ",
+  "canonical_asp": "CBFTHBUNVWEFS6JHBQ2YVJ34I64BRRRXF7DQTWM2FDYMKMT6UDXLPUHJ",
+  "verifier_reused": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "usdc_sac": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "on_chain_verification_before_rewire": {
+    "pool_usdc": "CBIELTK6... (correct)",
+    "pool_root_matches_offchain_empty_tree": "2302223575749844940221218608817648865122641281382153518325924961250440546344 (exact match)",
+    "pool_dummy_nullifier": "18840403724... (correct)",
+    "asp_root_dummy_only": "4880490547... (correct)",
+    "asp_blocklist_root": "6028266247... (correct)"
+  },
+  "predecessor_r1_pool_retired": "CCTBEMP4XHVOKMDV4YV7UUFFV4AC3BR4SS53GAUX3AY4AJI6KM33RJO2 (mocked USDC; no longer referenced by config)",
+  "full_loop_retest": {
+    "harness": "playwright, 2 contexts (merchant + buyer), live migrated contracts; accounts pre-provisioned in Node for friendbot reliability (in-app onboarding proven separately by scripts/onboard_diag.mjs → 100 USDC)",
+    "onboarding_in_app": "onboard_diag reached \"100.00 USDC · rail live\" (friendbot XLM → USDC trustline → DEX path-payment)",
+    "deposit": "$50 real USDC: buyer wallet 100.00 → 50.00 USDC; note at balance $50; persists across reload",
+    "pay": "typed $25 → real proof → merchant received EXACTLY +$25.00 real USDC (delta 25.00); $25 change note minted; balance $25",
+    "register_flip": "merchant register flipped to Paid/Verified on the real on-chain SpendEvent",
+    "receipt": "generated + on-chain verified on the real-USDC payment (receipt_ok=true)",
+    "cant_cover": "typing $100 (holding one $25 note) shows the graceful can’t-cover message; no crash",
+    "verdict": "FULL LOOP ON REAL USDC ✓"
+  },
+  "build": "next build green (exit 0)",
+  "fallback_commit_intact": "4bd58c9 (HEAD; migration is uncommitted working tree — git reset --hard 4bd58c9 restores known-good)"
+}

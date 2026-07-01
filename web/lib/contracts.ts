@@ -6,8 +6,11 @@
 import {
   Account,
   Address,
+  Asset,
   Contract,
+  Horizon,
   Keypair,
+  Operation,
   TransactionBuilder,
   nativeToScVal,
   scValToNative,
@@ -17,20 +20,142 @@ import {
 import {
   ASP_ID,
   FRIENDBOT_URL,
+  HORIZON_URL,
   NETWORK_PASSPHRASE,
   POOL_ID,
   RECEIPT_VERIFIER_ID,
   RPC_URL,
+  USDC_ASSET_CODE,
+  USDC_DECIMALS,
+  USDC_ISSUER,
 } from "./config";
 import { merkleRootOf } from "./wasmWitness";
 
 const server = () => new rpc.Server(RPC_URL, { allowHttp: false });
+const horizon = () => new Horizon.Server(HORIZON_URL);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const u256 = (dec: string) => nativeToScVal(BigInt(dec), { type: "u256" });
 const vecU256 = (decs: string[]) => xdr.ScVal.scvVec(decs.map(u256));
 const bytesScv = (hex: string) => xdr.ScVal.scvBytes(Buffer.from(hex, "hex"));
 const u32 = (n: number) => nativeToScVal(n, { type: "u32" });
+const addrScv = (g: string) => Address.fromString(g).toScVal();
+
+// ---------- real USDC rail (Phase R2-1) ----------
+export const USDC = new Asset(USDC_ASSET_CODE, USDC_ISSUER);
+const USDC_SCALE = 10 ** USDC_DECIMALS;
+
+/** A wallet's USDC balance in whole USD (from Horizon). Retries — a Horizon
+ * hiccup must not read as a zero balance. Returns 0 if the trustline is absent. */
+export async function usdcBalance(pubkey: string): Promise<number> {
+  for (let i = 0; i < 5; i++) {
+    try {
+      const acc = await horizon().loadAccount(pubkey);
+      const b = acc.balances.find(
+        (x) => "asset_code" in x && x.asset_code === USDC_ASSET_CODE && x.asset_issuer === USDC_ISSUER
+      );
+      return b ? parseFloat(b.balance) : 0;
+    } catch (e) {
+      // account-not-found (unfunded/no trustline) → 0; transient → retry
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      if (status === 404) return 0;
+      await sleep(1200);
+    }
+  }
+  throw new Error("Horizon unreachable (USDC balance)");
+}
+
+export async function hasUsdcTrustline(pubkey: string): Promise<boolean> {
+  try {
+    const acc = await horizon().loadAccount(pubkey);
+    return acc.balances.some(
+      (x) => "asset_code" in x && x.asset_code === USDC_ASSET_CODE && x.asset_issuer === USDC_ISSUER
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Submit a classic (non-Soroban) operation via Horizon, with a light retry. */
+async function classicOp(kp: Keypair, op: xdr.Operation): Promise<void> {
+  let lastErr: unknown;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const h = horizon();
+      const acc = await h.loadAccount(kp.publicKey());
+      const tx = new TransactionBuilder(acc, { fee: "2000", networkPassphrase: NETWORK_PASSPHRASE })
+        .addOperation(op)
+        .setTimeout(60)
+        .build();
+      tx.sign(kp);
+      await h.submitTransaction(tx);
+      return;
+    } catch (e) {
+      lastErr = e;
+      await sleep(1500);
+    }
+  }
+  throw lastErr ?? new Error("classic op failed");
+}
+
+/** Establish the USDC trustline (idempotent — skips if already present). */
+export async function establishUsdcTrustline(kp: Keypair): Promise<void> {
+  if (await hasUsdcTrustline(kp.publicKey())) return;
+  await classicOp(kp, Operation.changeTrust({ asset: USDC }));
+}
+
+/** Acquire `amount` USD of USDC via the testnet DEX (path payment XLM→USDC).
+ * Throws DexDryError if there's no path/liquidity so the caller can surface a
+ * clean retry rather than a broken half-onboarded wallet. */
+export class DexDryError extends Error {}
+export async function acquireUsdcViaDex(kp: Keypair, amount: number): Promise<void> {
+  // Is a path available? (guards against dry liquidity.)
+  let ok = false;
+  try {
+    const paths = await horizon()
+      .strictReceivePaths([Asset.native()], USDC, String(amount))
+      .call();
+    ok = (paths.records?.length ?? 0) > 0;
+  } catch {
+    ok = false;
+  }
+  if (!ok) throw new DexDryError("No XLM→USDC path on the testnet DEX right now");
+  try {
+    await classicOp(
+      kp,
+      Operation.pathPaymentStrictReceive({
+        sendAsset: Asset.native(),
+        sendMax: String(amount * 20), // generous XLM cap; testnet XLM is free
+        destination: kp.publicKey(),
+        destAsset: USDC,
+        destAmount: String(amount),
+        path: [],
+      })
+    );
+  } catch (e) {
+    throw new DexDryError(`DEX swap failed: ${e instanceof Error ? e.message : e}`);
+  }
+}
+
+/** Ensure `pubkey` (an already-XLM-funded account) holds >= `min` USDC: establish
+ * the trustline, then swap on the DEX for a `target` balance. Idempotent and
+ * resilient — never leaves a half-onboarded state; surfaces DexDryError. */
+export async function ensureUsdc(
+  kp: Keypair,
+  opts: { min?: number; target?: number; onStatus?: (m: string) => void } = {}
+): Promise<number> {
+  const min = opts.min ?? 1;
+  const target = opts.target ?? 100;
+  opts.onStatus?.("establishing USDC trustline…");
+  await establishUsdcTrustline(kp);
+  let bal = await usdcBalance(kp.publicKey());
+  if (bal >= min) return bal;
+  opts.onStatus?.("acquiring USDC on the testnet DEX…");
+  await acquireUsdcViaDex(kp, target);
+  bal = await usdcBalance(kp.publicKey());
+  if (bal < min) throw new DexDryError("USDC balance still zero after DEX swap");
+  return bal;
+}
 
 export async function ensureFunded(pubkey: string): Promise<void> {
   const s = server();
@@ -40,14 +165,20 @@ export async function ensureFunded(pubkey: string): Promise<void> {
   } catch {
     /* needs funding */
   }
-  await fetch(`${FRIENDBOT_URL}?addr=${pubkey}`).catch(() => {});
-  for (let i = 0; i < 15; i++) {
-    try {
-      await s.getAccount(pubkey);
-      return;
-    } catch {
-      await sleep(1500);
+  // Re-request friendbot across attempts: it rate-limits when several accounts
+  // are funded back-to-back (e.g. merchant + buyer), so a single request can be
+  // dropped. Back off and re-ask rather than fail the whole onboarding.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await fetch(`${FRIENDBOT_URL}?addr=${pubkey}`).catch(() => {});
+    for (let i = 0; i < 10; i++) {
+      try {
+        await s.getAccount(pubkey);
+        return;
+      } catch {
+        await sleep(1500);
+      }
     }
+    await sleep(2000);
   }
   throw new Error("friendbot funding timed out");
 }
@@ -409,7 +540,10 @@ export async function resolveAspLeaves(myLeaf: string, myIndex: number): Promise
   throw new Error("could not resolve live ASP root (RPC lag) — try again");
 }
 
-/** Deposit a fixed-denomination note. Resilient via expected-root confirm. */
+/** Deposit a fixed-denomination note, PULLING real USDC from `kp` into the pool
+ * (Phase R2-1). `kp` is both the tx source and the `from` whose source-account
+ * credentials authorize the nested usdc.transfer(from→pool). Resilient via
+ * expected-root confirm. */
 export async function deposit(
   kp: Keypair,
   amount: number,
@@ -417,10 +551,16 @@ export async function deposit(
   expectedRootDec: string,
   onStatus?: (m: string) => void
 ): Promise<WriteResult> {
-  return callWrite(kp, POOL_ID, "deposit", [u32(amount), u256(commitmentDec)], {
-    confirm: async () => (await poolRoot()) === expectedRootDec,
-    onStatus,
-  });
+  return callWrite(
+    kp,
+    POOL_ID,
+    "deposit",
+    [addrScv(kp.publicKey()), u32(amount), u256(commitmentDec)],
+    {
+      confirm: async () => (await poolRoot()) === expectedRootDec,
+      onStatus,
+    }
+  );
 }
 
 export interface SpendArgs {
@@ -434,10 +574,13 @@ export interface SpendArgs {
   asp_non_membership_root: string;
   merchant: string;
   payout: number;
+  merchantAddr: string; // the merchant's Stellar address — receives the real USDC payout
   realNullifier: string;
 }
 
-/** Spend a note. Resilient via nullifier-presence confirm. */
+/** Spend a note, SENDING real USDC (the payout) from the pool to `merchantAddr`
+ * (Phase R2-1). The change stays a private note. Resilient via nullifier-presence
+ * confirm. */
 export async function spend(kp: Keypair, a: SpendArgs, onStatus?: (m: string) => void): Promise<WriteResult> {
   const args = [
     bytesScv(a.proofHex),
@@ -450,6 +593,7 @@ export async function spend(kp: Keypair, a: SpendArgs, onStatus?: (m: string) =>
     u256(a.asp_non_membership_root),
     u256(a.merchant),
     u32(a.payout),
+    addrScv(a.merchantAddr),
   ];
   return callWrite(kp, POOL_ID, "spend", args, {
     confirm: async () => isSpent(a.realNullifier),

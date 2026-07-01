@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addNote,
   balance as calcBalance,
@@ -19,6 +19,7 @@ import { prove, proofToSorobanHex } from "@/lib/prover";
 import { merchantToField } from "@/lib/merchant";
 import { encodeReceipt, proveReceipt, receiptPublicHex } from "@/lib/receiptProver";
 import { selectCoins, type SelectionResult } from "@/lib/coinSelection";
+import { loadMerchant, merchantKeypair } from "@/lib/merchantWallet";
 
 // The canonical dummy input (slot 0 of a single-note spend): value-less, fixed
 // nullifier the pool ignores. Matches DUMMY_PRIV/DUMMY_BLIND in the Rust crate.
@@ -45,6 +46,11 @@ export default function Page() {
   const [screen, setScreen] = useState<Screen>("home");
   const [funded, setFunded] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Onboarding to the REAL USDC rail (Phase R2-1): XLM + trustline + DEX swap.
+  const [onboard, setOnboard] = useState<"provisioning" | "ready" | "dex-dry">("provisioning");
+  const [onboardMsg, setOnboardMsg] = useState<string>("provisioning wallet…");
+  const [usdcBal, setUsdcBal] = useState<number | null>(null);
+  const [merchantAddr, setMerchantAddr] = useState<string | null>(null);
 
   const [depDenom, setDepDenom] = useState<Denom>(5);
   const [depositing, setDepositing] = useState(false);
@@ -79,23 +85,48 @@ export default function Page() {
 
   const [prefillUsdc, setPrefillUsdc] = useState<number | null>(null);
 
+  // Onboard to the real USDC rail: friendbot XLM, then USDC trustline + a DEX
+  // swap for a starting balance. Resilient: on dry DEX liquidity we surface a
+  // clear "dex-dry" state with a Retry rather than a half-onboarded wallet.
+  const onboardWallet = useCallback(async (wallet: WalletState) => {
+    setOnboard("provisioning");
+    setErr(null);
+    try {
+      const kp = stellarKeypair(wallet);
+      setOnboardMsg("funding testnet XLM…");
+      await chain.ensureFunded(kp.publicKey());
+      setFunded(true);
+      const bal = await chain.ensureUsdc(kp, { min: 1, target: 100, onStatus: setOnboardMsg });
+      setUsdcBal(bal);
+      setOnboard("ready");
+    } catch (e) {
+      if (e instanceof chain.DexDryError) {
+        setOnboard("dex-dry");
+        setOnboardMsg(e.message);
+      } else {
+        setErr(`onboarding: ${e instanceof Error ? e.message : e}`);
+        setOnboard("dex-dry"); // recoverable via Retry
+        setOnboardMsg(e instanceof Error ? e.message : String(e));
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const wallet = loadWallet();
     setW(wallet);
-    chain
-      .ensureFunded(stellarKeypair(wallet).publicKey())
-      .then(() => setFunded(true))
-      .catch((e) => setErr(`funding: ${e.message}`));
-    // Pay-link from the merchant register: /?pay=<merchant>&amt=<usdc>
+    onboardWallet(wallet);
+    // Pay-link from the merchant register: /?pay=<merchant>&amt=<usdc>&addr=<G…>
     const q = new URLSearchParams(window.location.search);
     const pay = q.get("pay");
     const amt = q.get("amt");
+    const addr = q.get("addr");
+    if (addr) setMerchantAddr(addr);
     if (pay) {
       setMerchant(pay);
       setScreen("pay");
       if (amt) setPrefillUsdc(Number(amt));
     }
-  }, []);
+  }, [onboardWallet]);
 
   const balance = w ? calcBalance(w) : 0;
   const unspent = useMemo(() => (w ? w.notes.filter((n) => !n.spent) : []), [w]);
@@ -127,7 +158,7 @@ export default function Page() {
       const blinding = newBlinding();
       const commitment = await wit.noteCommitment(depDenom, w.walletPriv, blinding);
       const expectedRoot = await wit.merkleRootOf([...poolLeaves, commitment]);
-      setWorking("submitting deposit on-chain…");
+      setWorking("depositing real USDC on-chain…");
       const res = await chain.deposit(kp, depDenom, commitment, expectedRoot, setWorking);
       const leafIndex = typeof res.returnValue === "number" ? res.returnValue : poolLeaves.length;
       const note: Note = {
@@ -140,6 +171,7 @@ export default function Page() {
         createdAt: Date.now(),
       };
       update(addNote(w, note));
+      chain.usdcBalance(kp.publicKey()).then(setUsdcBal).catch(() => {}); // real USDC left the wallet
       setScreen("home");
     } catch (e) {
       setErr(`deposit failed: ${e instanceof Error ? e.message : e}`);
@@ -241,6 +273,17 @@ export default function Page() {
       const proofHex = proofToSorobanHex(proof);
 
       setStep("submit");
+      // Resolve the merchant's Stellar address that receives the real USDC
+      // payout: from the pay-link when present, else the local demo merchant
+      // (onboarded to receive — friendbot XLM + USDC trustline).
+      setWorking("preparing merchant payout address…");
+      let payTo = merchantAddr;
+      if (!payTo) {
+        const mkp = merchantKeypair(loadMerchant());
+        await chain.ensureFunded(mkp.publicKey());
+        await chain.establishUsdcTrustline(mkp);
+        payTo = mkp.publicKey();
+      }
       setWorking("submitting spend (with change) on-chain…");
       const slot1Nullifier = built.input_nullifiers[1]; // SpendEvent + receipt
       const res = await chain.spend(kp, {
@@ -254,6 +297,7 @@ export default function Page() {
         asp_non_membership_root: built.asp_non_membership_root,
         merchant: merchantId,
         payout: amount,
+        merchantAddr: payTo,
         realNullifier: slot1Nullifier,
       }, setWorking);
 
@@ -508,24 +552,43 @@ export default function Page() {
                 ← back
               </button>
               <h2>Top up a private note</h2>
-              <p className="hint" style={{ marginBottom: 18 }}>
-                Pick a fixed denomination. We mint a commitment and deposit it into the pool. The chain
-                only ever sees the commitment — never an amount or identity.
+              <p className="hint" style={{ marginBottom: 14 }}>
+                Pick a fixed denomination — this deposits <b>real testnet USDC</b> from your wallet into the
+                pool and mints a private note. The chain sees only the commitment, never an amount or identity.
               </p>
+              <div className="usdc-avail">
+                available: <b>{usdcBal === null ? "…" : `${usdcBal.toFixed(2)} USDC`}</b>
+                {onboard === "ready" && <span className="ok"> · rail live</span>}
+              </div>
+              {onboard === "dex-dry" && (
+                <div className="plan cant" style={{ marginBottom: 12 }}>
+                  Couldn’t get testnet USDC: {onboardMsg}. The DEX may be dry.
+                  <button className="btn ghost" style={{ marginTop: 10 }} onClick={() => w && onboardWallet(w)}>
+                    Retry onboarding
+                  </button>
+                </div>
+              )}
               <div className="field">
                 <label>Denomination (USDC)</label>
                 <div className="denoms">
                   {DENOMINATIONS.map((d) => (
-                    <button key={d} className={"denom" + (depDenom === d ? " sel" : "")} onClick={() => setDepDenom(d)}>
+                    <button key={d} className={"denom" + (depDenom === d ? " sel" : "")} onClick={() => setDepDenom(d)} disabled={onboard !== "ready"}>
                       ${d}
                     </button>
                   ))}
                 </div>
               </div>
+              {onboard === "provisioning" && <div className="working-line"><span className="spin" /> {onboardMsg}</div>}
               {working && <div className="working-line"><span className="spin" /> {working}</div>}
               {err && <div className="err">{err}</div>}
-              <button className="btn" disabled={!funded || depositing} onClick={doDeposit}>
-                {depositing ? "Depositing…" : funded ? `Deposit $${depDenom}` : "Provisioning wallet…"}
+              <button className="btn" disabled={onboard !== "ready" || depositing || (usdcBal !== null && usdcBal < depDenom)} onClick={doDeposit}>
+                {depositing
+                  ? "Depositing…"
+                  : onboard !== "ready"
+                  ? "Onboarding to USDC rail…"
+                  : usdcBal !== null && usdcBal < depDenom
+                  ? `Need $${depDenom} USDC (have $${usdcBal.toFixed(2)})`
+                  : `Deposit $${depDenom} USDC`}
               </button>
             </div>
           )}
@@ -710,10 +773,13 @@ export default function Page() {
         </div>
 
         <div className="honesty">
-          <b>Demo honesty:</b> seedless = a local Stellar key is auto-provisioned + friendbot-funded
-          (production uses passkey/social login). On-chain the balance is <b>always</b> hidden — the eye
-          toggle only hides the <b>local</b> display. Mocked for now: USDC transfer-in &amp; merchant payout
-          (no real token moves), and the ASP admin (a server route stands in for the attestation service).
+          <b>Demo honesty:</b> seedless = a local Stellar key is auto-provisioned, friendbot-funded, and
+          given a USDC trustline + a DEX-swapped starting balance (production uses passkey/social login).
+          <b> Real now:</b> USDC transfer-in on deposit and the merchant payout on spend are <b>real on-chain
+          USDC</b> via the USDC SAC (deposit pulls from your wallet; payout sends to the merchant; change
+          stays a private note). On-chain the balance is <b>always</b> hidden — the eye toggle only hides the
+          <b>local</b> display. <b>Still mocked:</b> the ASP admin (a server route stands in for the
+          attestation service) and the fiat anchor (SEP quote/settle). Trusted setup is dev-only.
           Deposits use fixed denominations {`{1,5,10,50}`}; payments are <b>any amount</b> — the wallet picks
           the note(s) and returns the remainder as a private <b>change note</b>.
           <span className="reset-row">

@@ -5,12 +5,21 @@ export const RPC_URL = "https://soroban-testnet.stellar.org";
 export const HORIZON_URL = "https://horizon-testnet.stellar.org";
 export const FRIENDBOT_URL = "https://friendbot.stellar.org";
 
-// R1 (Phase R1): change-enabled pool — spend() inserts change-note leaves and
-// emits ChangeNote events; arbitrary payout allowed (deposits stay fixed-denom).
-// Fresh canonical pair deployed for the type-an-amount Pay UI. Verifier unchanged.
-export const POOL_ID = "CCTBEMP4XHVOKMDV4YV7UUFFV4AC3BR4SS53GAUX3AY4AJI6KM33RJO2";
-export const ASP_ID = "CA2PDO76B534G6UNM57POD6UKM4S254TNX75SXGRDUMJXTJ5UB4UWQAU";
+// R2-1 (Phase R2-1): REAL USDC rail is now canonical. The pool pulls real USDC
+// on deposit (from.require_auth rooted at deposit) and sends real USDC to the
+// merchant on payout; change stays a private note. Change-enabled + arbitrary
+// payout (deposits stay fixed-denom). Verifier unchanged; fresh ASP (dummy@0 +
+// blocklist seeded). Verified on-chain before this rewire (see deployments/testnet/r2-1.json).
+export const POOL_ID = "CBTOBHYHYVKTQLSNQQ3LPEVWMPQ5C4B2HEP6FQJR4YYM5HCDXABKX5CZ";
+export const ASP_ID = "CBFTHBUNVWEFS6JHBQ2YVJ34I64BRRRXF7DQTWM2FDYMKMT6UDXLPUHJ";
 export const VERIFIER_ID = "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T";
+
+// USDC Stellar Asset Contract (testnet) — the real rail the pool pulls/sends.
+// `stellar contract id asset --asset USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`
+export const USDC_SAC_ID = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+export const USDC_ISSUER = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+export const USDC_ASSET_CODE = "USDC";
+export const USDC_DECIMALS = 7; // $1 = 10_000_000 stroops
 // Receipt (selective-disclosure / proof-of-payment) verifier — same Groth16
 // verifier code, embeds the paymentReceipt circuit VK (4 public inputs).
 export const RECEIPT_VERIFIER_ID = "CA6BDTDPO6ARRTHVFQ6LTJLP255JZDEPAPISXDAM5P7PF7FYBXRAGCXI";

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as chain from "@/lib/contracts";
 import { ANCHOR_RATE_NGN_PER_USDC, fmtNGN, merchantToField, quoteFromNgn } from "@/lib/merchant";
+import { loadMerchant, merchantKeypair, saveMerchant } from "@/lib/merchantWallet";
 
 type State = "new" | "awaiting" | "paid";
 interface Settlement {
@@ -25,9 +26,48 @@ export default function MerchantRegister() {
   const [settle, setSettle] = useState<Settlement | null>(null);
   const [note, setNote] = useState<string>("");
 
+  // The merchant's receiving account (real USDC payout target, Phase R2-1).
+  const [merchantAddr, setMerchantAddr] = useState<string | null>(null);
+  const [merchantReady, setMerchantReady] = useState(false);
+  const [merchantMsg, setMerchantMsg] = useState("provisioning merchant account…");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const m = loadMerchant();
+      const kp = merchantKeypair(m);
+      setMerchantAddr(kp.publicKey());
+      try {
+        setMerchantMsg("funding merchant XLM…");
+        await chain.ensureFunded(kp.publicKey());
+        setMerchantMsg("establishing USDC trustline…");
+        await chain.establishUsdcTrustline(kp); // needed to RECEIVE the payout
+        if (!cancelled) {
+          setMerchantReady(true);
+          setMerchantMsg("ready to receive USDC");
+        }
+      } catch (e) {
+        if (!cancelled) setMerchantMsg(`merchant onboarding failed: ${e instanceof Error ? e.message : e}`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist the merchant name so the payout target keeps a stable identity.
+  useEffect(() => {
+    const m = loadMerchant();
+    if (m.name !== merchantName) saveMerchant({ ...m, name: merchantName });
+  }, [merchantName]);
+
   const quote = quoteFromNgn(Number(ngnInput) || 0);
   const merchantId = merchantToField(merchantName);
-  const payLink = invoice ? `/?pay=${encodeURIComponent(merchantName)}&amt=${invoice.usdc}` : "/";
+  // Pay-link carries the merchant's Stellar address so the pool sends real USDC to it.
+  const payLink =
+    invoice && merchantAddr
+      ? `/?pay=${encodeURIComponent(merchantName)}&amt=${invoice.usdc}&addr=${merchantAddr}`
+      : "/";
 
   // generate the charge
   function generate() {
@@ -113,8 +153,16 @@ export default function MerchantRegister() {
                 buyer pays <b>${quote.usdc}.00 USDC</b> · settles to <b>{fmtNGN(quote.ngn)}</b>
                 <span className="rate"> @ {quote.rateLabel} · {quote.sep}</span>
               </div>
-              <button className="reg-btn" onClick={generate} disabled={!quote.usdc}>
-                Generate charge
+              <div className="merch-acct">
+                <span className={"mdot" + (merchantReady ? " ok" : "")} />
+                {merchantReady && merchantAddr ? (
+                  <>receiving USDC at <span className="mono">{merchantAddr.slice(0, 6)}…{merchantAddr.slice(-4)}</span></>
+                ) : (
+                  <>{merchantMsg}</>
+                )}
+              </div>
+              <button className="reg-btn" onClick={generate} disabled={!quote.usdc || !merchantReady}>
+                {merchantReady ? "Generate charge" : "Setting up merchant account…"}
               </button>
             </>
           )}
