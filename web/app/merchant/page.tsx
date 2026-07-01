@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as chain from "@/lib/contracts";
 import { ANCHOR_RATE_NGN_PER_USDC, fmtNGN, merchantToField, quoteFromNgn } from "@/lib/merchant";
+import { absolutePayLink, buildPayLink, makePayId } from "@/lib/paylink";
+import { QRCodeSVG } from "qrcode.react";
 import {
   clearMerchant,
   createMerchant,
@@ -32,7 +34,8 @@ export default function MerchantRegister() {
   const [description, setDescription] = useState("Jollof + drink");
   const [state, setState] = useState<State>("new");
 
-  const [invoice, setInvoice] = useState<{ ngn: number; usdc: number; merchant: string } | null>(null);
+  const [invoice, setInvoice] = useState<{ ngn: number; usdc: number; merchant: string; payId: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [sinceLedger, setSinceLedger] = useState(0);
   const [paidEvent, setPaidEvent] = useState<chain.SpendEvent | null>(null);
   const [settle, setSettle] = useState<Settlement | null>(null);
@@ -106,16 +109,26 @@ export default function MerchantRegister() {
   }
 
   const quote = quoteFromNgn(Number(ngnInput) || 0);
-  // Pay-link carries the merchant's Stellar address so the pool sends real USDC to it.
+  // Pay-link carries EVERYTHING the buyer needs — USDC amount, receiving address,
+  // merchant name, local-currency amount + code, and the display pay-ID. No
+  // server lookup: the buyer parses it straight off the link/QR.
   const payLink =
     invoice && merchantAddr
-      ? `/?pay=${encodeURIComponent(merchantName)}&amt=${invoice.usdc}&addr=${merchantAddr}`
+      ? buildPayLink({
+          merchantName,
+          usdc: invoice.usdc,
+          addr: merchantAddr,
+          fiat: invoice.ngn,
+          currency: "NGN",
+          payId: invoice.payId,
+        })
       : "/";
+  const payUrl = absolutePayLink(payLink);
 
-  // generate the charge
+  // generate the charge (mints a fresh display pay-ID for this invoice)
   function generate() {
     if (!quote.usdc) return;
-    setInvoice({ ngn: quote.ngn, usdc: quote.usdc, merchant: merchantId });
+    setInvoice({ ngn: quote.ngn, usdc: quote.usdc, merchant: merchantId, payId: makePayId() });
     setState("awaiting");
     setPaidEvent(null);
     setSettle(null);
@@ -172,6 +185,7 @@ export default function MerchantRegister() {
           {merchant && <span className="reg-loc">· {merchantName}</span>}
         </div>
         <div className="reg-status">
+          <a className="reg-role-switch" href="/" title="switch to the buyer wallet">← Buyer wallet</a>
           {merchant && (
             <button className="switch-merch" onClick={switchMerchant} title="forget this merchant (demo re-run)">
               switch merchant
@@ -246,17 +260,34 @@ export default function MerchantRegister() {
 
           {state === "awaiting" && invoice && (
             <>
-              <span className="label awaiting">● Awaiting payment</span>
+              <span className="label awaiting">● Awaiting payment · Pay ID {invoice.payId}</span>
               <div className="charge-amt">{fmtNGN(invoice.ngn)}</div>
               <div className="charge-sub">${invoice.usdc}.00 USDC · {description}</div>
               <div className="charge-meta">
                 <div><span className="k">merchant</span><span className="v">{merchantName}</span></div>
-                <div><span className="k">merchant id</span><span className="v mono">{merchantId.slice(0, 14)}…</span></div>
+                <div><span className="k">receiving</span><span className="v mono">{merchantAddr ? `${merchantAddr.slice(0, 6)}…${merchantAddr.slice(-4)}` : "…"}</span></div>
+              </div>
+              <div className="qr-block">
+                <div className="qr-frame">
+                  <QRCodeSVG value={payUrl} size={148} bgColor="#0c0f08" fgColor="#e9f5d8" level="M" includeMargin />
+                </div>
+                <div className="qr-side">
+                  <span className="label">Scan to pay</span>
+                  <p className="hint">Scan with the Cowrie wallet, or open the link below on this device.</p>
+                  <div className="payid-chip">{invoice.payId}</div>
+                </div>
               </div>
               <div className="paylink">
                 <span className="label">Buyer pay-link</span>
-                <a className="link" href={payLink} target="_blank" rel="noreferrer">{payLink}</a>
-                <p className="hint">Open the Cowrie wallet and pay this charge. The register flips only when the verified on-chain spend event appears.</p>
+                <a className="link" href={payLink} target="_blank" rel="noreferrer">{payUrl}</a>
+                <button
+                  className="switch-merch"
+                  style={{ marginTop: 8 }}
+                  onClick={() => { navigator.clipboard?.writeText(payUrl); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1500); }}
+                >
+                  {linkCopied ? "copied ✓" : "copy link"}
+                </button>
+                <p className="hint">The register flips only when the verified on-chain spend event appears.</p>
               </div>
               <div className="watching"><span className="spin" /> watching the chain for a verified payment…</div>
             </>
@@ -355,7 +386,6 @@ export default function MerchantRegister() {
       </div>
       )}
       {note && <div className="reg-note">{note}</div>}
-      <a className="reg-back" href="/">← buyer wallet</a>
     </div>
   );
 }

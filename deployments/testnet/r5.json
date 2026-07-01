@@ -1,0 +1,21 @@
+{
+  "phase": "R5 — separate buyer wallet from merchant register",
+  "date": "2026-07-01",
+  "ui_routing_only": true,
+  "no_contract_changes": true,
+  "fallback_commit": "8423626",
+  "buyer_home_clean": {
+    "in_wallet_merchant_link_removed": true,
+    "id_card": "shows only handle (name.cowrie) + Claim action; removed 'SETTLES IN ₦·€·$' and '$0.00 FEE' merchant framing",
+    "claim_button": "shortened to 'Claim', decorative dot removed so it renders fully (not clipped)",
+    "reset_demo": "kept, small/secondary in the body"
+  },
+  "role_switch": {
+    "buyer_to_merchant": "separated 'SWITCH ROLE → Merchant register' in the sidebar (and a distinct dashed 'Merchant' tab in the mobile nav) — not mixed with wallet nav (Home/Pay/Verify)",
+    "merchant_to_buyer": "'← Buyer wallet' role switch in the register header (symmetric)",
+    "removed": "redundant in-wallet merchant link; the buyer-side 'Privacy' nav that routed into the register"
+  },
+  "merchant_register_standalone": "COWRIE REGISTER shows merchant sign-in + invoices + payout + merchant USDC balance + settlement/fee framing; NO buyer wallet, balance, or ID card",
+  "e2e": "R5 ROLE SEPARATION ✓ — clean home (no merchant link, no settles/fee, Claim un-clipped, separated role switch), standalone register (no buyer elements), role switch round-trips both ways, full loop across the switch (deposit $50, invoice as Acme Foods, pay $25, merchant real USDC Δ +25.00, register flipped, receipt ok), state isolated (cowrie.wallet.v1 + cowrie.merchant.v1 both persist)",
+  "build": "next build green"
+}

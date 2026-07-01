@@ -43,7 +43,12 @@ body { min-height: 100vh; overflow-x: hidden; }
 .sideitem { display: flex; align-items: center; gap: 13px; padding: 11px 14px; border-radius: 12px; font-size: 14.5px; font-weight: 500; color: var(--muted2); background: transparent; border: none; cursor: pointer; font-family: var(--sans); width: 100%; text-align: left; }
 .sideitem:hover { color: var(--text); background: rgba(255,255,255,0.03); }
 .sideitem.active { color: var(--green); background: var(--green-dim); }
-.side-foot { margin-top: auto; font-family: var(--mono); font-size: 10.5px; color: var(--faint); letter-spacing: 0.06em; }
+/* role switch — deliberate, out-of-the-way, visually SEPARATE from wallet nav */
+.side-role { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); }
+.side-role-label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); padding: 0 14px 6px; }
+.sideitem.role-switch { color: var(--muted); font-size: 13.5px; }
+.sideitem.role-switch:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.side-foot { margin-top: 16px; font-family: var(--mono); font-size: 10.5px; color: var(--faint); letter-spacing: 0.06em; }
 
 .app { display: flex; flex-direction: column; z-index: 1; position: relative; }
 .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
@@ -156,6 +161,27 @@ body { min-height: 100vh; overflow-x: hidden; }
 .signin-card { grid-column: 1 / -1; max-width: 460px; }
 .switch-merch { font-family: var(--mono); font-size: 11px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px; cursor: pointer; margin-right: 10px; }
 .switch-merch:hover { color: var(--text); border-color: var(--muted2); }
+/* invoice QR block (merchant awaiting) — Phase R6 */
+.qr-block { display: flex; gap: 16px; align-items: center; margin: 16px 0 4px; }
+.qr-frame { flex: none; padding: 8px; border-radius: 12px; background: #0c0f08; border: 1px solid var(--green-line); line-height: 0; }
+.qr-side { display: flex; flex-direction: column; gap: 4px; }
+.payid-chip { align-self: flex-start; margin-top: 6px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; color: var(--green); background: var(--green-dim); border: 1px solid var(--green-line); border-radius: 8px; padding: 5px 11px; }
+
+/* buyer invoice card (loaded from a pay-link/QR) — Phase R6 */
+.invoice-card { border: 1px solid var(--green-line); background: var(--green-dim); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.invoice-card .inv-row { display: flex; justify-content: space-between; align-items: baseline; }
+.invoice-card .inv-k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.invoice-card .inv-v { font-weight: 600; }
+.invoice-card .inv-amount { font-size: 22px; font-weight: 700; margin: 10px 0 2px; }
+.invoice-card .inv-amount b { font-weight: 700; }
+.invoice-card .inv-fiat { color: var(--green); font-size: 18px; }
+.invoice-card .inv-rate { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.invoice-card .inv-meta { display: flex; justify-content: space-between; margin-top: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted2); }
+.invoice-card .inv-meta .mono { color: var(--muted); }
+
+/* register -> buyer wallet role switch (symmetric with the wallet's role switch) */
+.reg-role-switch { font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; color: var(--muted); text-decoration: none; border: 1px dashed var(--border); border-radius: 8px; padding: 4px 9px; margin-right: 10px; }
+.reg-role-switch:hover { color: var(--text); border-color: var(--muted2); }
 .merch-panel .mp-name { font-size: 17px; font-weight: 700; margin: 6px 0 10px; }
 .mp-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
 .mp-k { font-family: var(--mono); font-size: 11px; color: var(--muted); }
@@ -295,6 +321,9 @@ body:has(.reg-root) { align-items: flex-start; }
 .bottom-tabs { display: flex; gap: 6px; justify-content: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)); position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: rgba(6,8,7,0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--border); }
 .bottom-tabs .tab { flex: 1 1 0; text-align: center; font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; padding: 9px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted2); background: transparent; cursor: pointer; white-space: nowrap; }
 .bottom-tabs .tab.active { color: var(--green); border-color: var(--green-line); background: var(--green-dim); }
+/* mobile role switch — flagged as a separate role (dashed, muted), not a wallet tab */
+.bottom-tabs .tab.role-switch { flex: 0 0 auto; color: var(--muted); border-style: dashed; letter-spacing: 0.02em; }
+.bottom-tabs .tab.role-switch:hover { color: var(--text); }
 
 @media (min-width: 768px) {
   .sidebar { display: flex; flex-direction: column; gap: 28px; width: 232px; flex-shrink: 0; padding: 26px 16px 22px; border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; }

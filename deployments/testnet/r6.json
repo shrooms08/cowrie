@@ -1,0 +1,13 @@
+{
+  "phase": "R6 — merchant invoice pay-link + QR + pay-ID; buyer local-currency view",
+  "date": "2026-07-01",
+  "ui_and_existing_anchor_only": true,
+  "no_contract_changes": true,
+  "existing_before_build": "merchant register already built /?pay=<name>&amt=<usdc>&addr=<G...> that pre-filled the buyer Pay screen (merchant, prefillUsdc, merchantAddr). Extended it — did not rebuild.",
+  "paylink_module": "lib/paylink.ts — buildPayLink/parsePayLink carry pay, amt(usdc), addr, fiat(local), cur, id(pay-ID); makePayId() -> COWRIE-XXXX; no server resolver",
+  "merchant": "invoice generates a display Pay ID (COWRIE-ABFA), a QR (qrcode.react QRCodeSVG of the absolute link), and a copyable full link; awaiting header shows 'Awaiting payment · Pay ID …'",
+  "buyer": "loading the link auto-fills a LOCKED invoice card: merchant name, 'Pay $25.00 USDC ≈ ₦42,500', rate 'anchor quote (SEP-38, mock)', Pay ID, receiving address. No amount input (buyer can't change it).",
+  "critical_match": "amount + address ride in the link into the real spend. e2e: link amt=25/addr=<G>; buyer paid $25.00; merchant real USDC +25.00 AT the invoice address; register flipped. amount_address_match=true.",
+  "e2e": "R6 PAY-LINK + QR + LOCAL CURRENCY ✓ — merchant $25 (NGN42,500) invoice -> pay-ID+QR+link; buyer loads -> auto-filled $25 + ≈NGN42,500 + pay-ID, locked; pays -> merchant real USDC +25 at invoice addr -> register flips; paid amount/addr match invoice exactly",
+  "build": "next build green"
+}

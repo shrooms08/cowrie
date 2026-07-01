@@ -21,6 +21,7 @@ import { encodeReceipt, proveReceipt, receiptPublicHex } from "@/lib/receiptProv
 import { selectCoins, type SelectionResult } from "@/lib/coinSelection";
 import { getMerchant, merchantKeypair } from "@/lib/merchantWallet";
 import { isValidHandle, slugifyHandle } from "@/lib/names";
+import { parsePayLink, fmtFiat, type PayLinkData } from "@/lib/paylink";
 
 // The canonical dummy input (slot 0 of a single-note spend): value-less, fixed
 // nullifier the pool ignores. Matches DUMMY_PRIV/DUMMY_BLIND in the Rust crate.
@@ -95,6 +96,9 @@ export default function Page() {
   }
 
   const [prefillUsdc, setPrefillUsdc] = useState<number | null>(null);
+  // An invoice loaded from a merchant pay-link/QR. When set, the Pay screen is
+  // LOCKED to it — the buyer pays exactly this amount to exactly this address.
+  const [payInvoice, setPayInvoice] = useState<PayLinkData | null>(null);
 
   // Onboard to the real USDC rail: friendbot XLM, then USDC trustline + a DEX
   // swap for a starting balance. Resilient: on dry DEX liquidity we surface a
@@ -126,16 +130,15 @@ export default function Page() {
     const wallet = loadWallet();
     setW(wallet);
     onboardWallet(wallet);
-    // Pay-link from the merchant register: /?pay=<merchant>&amt=<usdc>&addr=<G…>
-    const q = new URLSearchParams(window.location.search);
-    const pay = q.get("pay");
-    const amt = q.get("amt");
-    const addr = q.get("addr");
-    if (addr) setMerchantAddr(addr);
-    if (pay) {
-      setMerchant(pay);
+    // Pay-link from the merchant register — everything rides in the link:
+    // /?pay=<merchant>&amt=<usdc>&addr=<G…>&fiat=<local>&cur=<code>&id=<pay-ID>
+    const inv = parsePayLink(window.location.search);
+    if (inv) {
+      setPayInvoice(inv);
+      setMerchant(inv.merchantName);
+      setMerchantAddr(inv.addr);
+      setPrefillUsdc(inv.usdc);
       setScreen("pay");
-      if (amt) setPrefillUsdc(Number(amt));
     }
   }, [onboardWallet]);
 
@@ -440,22 +443,27 @@ export default function Page() {
 
   const activity = buildActivity(w);
 
-  const navItems = [
+  // Buyer wallet nav — wallet tools only. The Merchant register is a SEPARATE
+  // role, reached via a deliberate, out-of-the-way role switch (below), not a
+  // wallet feature mixed into this nav.
+  const walletNav = [
     { key: "HOME", label: "Home", icon: <HomeIcon /> },
     { key: "PAY", label: "Pay", icon: <SendIcon stroke="currentColor" /> },
-    { key: "MERCHANT", label: "Merchant", icon: <StoreIcon /> },
     { key: "VERIFY", label: "Verify", icon: <ShieldIcon nav /> },
-    { key: "PRIVACY", label: "Privacy", icon: <EyeIcon off={false} /> },
   ];
+  // Start a fresh MANUAL pay (clears any loaded invoice so the buyer can type).
+  function startManualPay() {
+    setPayInvoice(null);
+    setMerchant("");
+    setPayAmount("");
+    setScreen("pay");
+  }
   function goTab(t: string) {
     if (t === "HOME") setScreen("home");
-    if (t === "PAY") {
-      setScreen("pay");
-    }
-    if (t === "MERCHANT") window.location.href = "/merchant";
+    if (t === "PAY") startManualPay();
     if (t === "VERIFY") window.location.href = "/verify";
-    if (t === "PRIVACY") window.location.href = "/merchant#privacy";
   }
+  const goMerchant = () => { window.location.href = "/merchant"; };
   const isActive = (t: string) =>
     (t === "HOME" && screen === "home") || (t === "PAY" && (screen === "pay" || screen === "receive"));
 
@@ -467,13 +475,20 @@ export default function Page() {
           <span className="word">cowrie</span>
         </div>
         <nav className="sidenav">
-          {navItems.map((it) => (
+          {walletNav.map((it) => (
             <button key={it.key} className={"sideitem" + (isActive(it.key) ? " active" : "")} onClick={() => goTab(it.key)}>
               {it.icon}
               <span>{it.label}</span>
             </button>
           ))}
         </nav>
+        <div className="side-role">
+          <span className="side-role-label">switch role</span>
+          <button className="sideitem role-switch" onClick={goMerchant}>
+            <StoreIcon />
+            <span>Merchant register</span>
+          </button>
+        </div>
         <div className="side-foot">testnet · Protocol 27</div>
       </aside>
 
@@ -541,9 +556,7 @@ export default function Page() {
               </div>
               <div
                 className="action green"
-                onClick={() => {
-                  setScreen("pay");
-                }}
+                onClick={startManualPay}
               >
                 <SendIcon />
                 <span className="t">Send</span>
@@ -551,21 +564,16 @@ export default function Page() {
             </div>
 
             <div className="idcard">
-              <div className="dot" />
               <span className="label">Cowrie ID</span>
               <button
                 className="claim-link"
                 onClick={() => { setClaimInput(w.handle); setScreen("claim"); }}
               >
-                claim name
+                Claim
               </button>
               <div className="handle">
                 {w.handle}
                 <span className="suffix">.cowrie</span>
-              </div>
-              <div className="foot">
-                <span>SETTLES IN ₦ · € · $</span>
-                <span>$0.00 FEE</span>
               </div>
             </div>
 
@@ -699,24 +707,51 @@ export default function Page() {
               <button className="back" onClick={() => setScreen("home")}>
                 ← back
               </button>
-              <h2>Pay a merchant</h2>
-              <div className="field">
-                <label>Merchant</label>
-                <input className="input" value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="open a merchant invoice link, or type a name" />
-              </div>
-              <div className="field">
-                <label>Amount (USDC)</label>
-                <div className="amount-entry">
-                  <span className="cur">$</span>
-                  <input
-                    className="input amount-input"
-                    inputMode="numeric"
-                    placeholder="0"
-                    value={payAmount}
-                    onChange={(e) => setPayAmount(e.target.value.replace(/[^0-9]/g, ""))}
-                  />
+              <h2>{payInvoice ? "Confirm payment" : "Pay a merchant"}</h2>
+              {payInvoice ? (
+                /* Loaded from a merchant invoice — LOCKED to its amount + address. */
+                <div className="invoice-card">
+                  <div className="inv-row">
+                    <span className="inv-k">Merchant</span>
+                    <span className="inv-v">{payInvoice.merchantName}</span>
+                  </div>
+                  <div className="inv-amount">
+                    Pay <b>${payInvoice.usdc.toFixed(2)} USDC</b>
+                    {payInvoice.fiat != null && (
+                      <span className="inv-fiat"> ≈ {fmtFiat(payInvoice.fiat, payInvoice.currency)}</span>
+                    )}
+                  </div>
+                  {payInvoice.fiat != null && payInvoice.usdc > 0 && (
+                    <div className="inv-rate">
+                      {fmtFiat(Math.round(payInvoice.fiat / payInvoice.usdc), payInvoice.currency)} / $1 · anchor quote (SEP-38, mock)
+                    </div>
+                  )}
+                  <div className="inv-meta">
+                    <span>Pay ID {payInvoice.payId ?? "—"}</span>
+                    <span className="mono">→ {payInvoice.addr.slice(0, 6)}…{payInvoice.addr.slice(-4)}</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="field">
+                    <label>Merchant</label>
+                    <input className="input" value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="open a merchant invoice link, or type a name" />
+                  </div>
+                  <div className="field">
+                    <label>Amount (USDC)</label>
+                    <div className="amount-entry">
+                      <span className="cur">$</span>
+                      <input
+                        className="input amount-input"
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={payAmount}
+                        onChange={(e) => setPayAmount(e.target.value.replace(/[^0-9]/g, ""))}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Coin-selection preview — show what will happen BEFORE paying. */}
               {unspent.length === 0 ? (
@@ -763,7 +798,13 @@ export default function Page() {
                 disabled={!funded || !selection || !selection.ok || !merchant.trim()}
                 onClick={doPay}
               >
-                {!merchant.trim() ? "Enter a merchant" : selection && selection.ok ? `Pay $${parsedAmount}` : "Enter an amount"}
+                {!merchant.trim()
+                  ? "Enter a merchant"
+                  : selection && selection.ok
+                  ? `Pay $${parsedAmount}`
+                  : payInvoice
+                  ? `Pay $${payInvoice.usdc}`
+                  : "Enter an amount"}
               </button>
             </div>
           )}
@@ -813,6 +854,7 @@ export default function Page() {
                 onClick={() => {
                   setStep("idle");
                   setPaid(null);
+                  setPayInvoice(null);
                   setScreen("home");
                 }}
               >
@@ -874,16 +916,18 @@ export default function Page() {
         </div>
 
         <div className="foot-controls">
-          <a href="/merchant">merchant register →</a>
           <button className="reset-btn" onClick={resetDemo}>reset demo</button>
         </div>
 
         <nav className="bottom-tabs">
-          {navItems.map((it) => (
+          {walletNav.map((it) => (
             <button key={it.key} className={"tab" + (isActive(it.key) ? " active" : "")} onClick={() => goTab(it.key)}>
               {it.label}
             </button>
           ))}
+          <button className="tab role-switch" onClick={goMerchant} title="switch to the merchant register">
+            Merchant
+          </button>
         </nav>
       </main>
     </div>
