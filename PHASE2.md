@@ -1,4 +1,4 @@
-# Phase 2 — Pool + ASP contracts + spend entrypoint (PASSED ✅)
+# Phase 2 — Pool + ASP contracts + spend entrypoint (PASSED)
 
 **Goal:** build the on-chain state the Phase-1 verifier checks against — a
 commitment pool, a nullifier set, an ASP allowlist — and a `spend()` entrypoint
