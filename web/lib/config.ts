@@ -16,7 +16,7 @@ export const FRIENDBOT_URL = "https://friendbot.stellar.org";
 // ASP-root-mismatch). These are freshly deployed + seeded (pool empty-tree root,
 // ASP dummy@0 + blocklist), verified on-chain BEFORE this rewire. See
 // deployments/testnet/r7-redeploy.json.
-export const POOL_ID = "CC3CYAIPGC6GOQNYZWLJEZ3OJ2HKPLHHLJXBIJLTKWF6BUY76LDZ3FRI";
+export const POOL_ID = "CBWVWCZI2CN7PIC7UR7AHJFD4GT3UVCGLWDW3B63W6AWVTE2IMTHUZ5B";
 export const ASP_ID = "CCD33Z46QFHZOA4FCUM6DND7H6WGUK5VSX2YUZV5PUVXRKY3QB3F3UPL";
 export const VERIFIER_ID = "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T";
 

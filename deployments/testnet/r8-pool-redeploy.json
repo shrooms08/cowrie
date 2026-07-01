@@ -1,0 +1,16 @@
+{
+  "phase": "R8 — fresh pool redeploy (dry-run reset); ASP kept",
+  "date": "2026-07-01",
+  "new_pool": "CBWVWCZI2CN7PIC7UR7AHJFD4GT3UVCGLWDW3B63W6AWVTE2IMTHUZ5B",
+  "asp_kept": "CCD33Z46QFHZOA4FCUM6DND7H6WGUK5VSX2YUZV5PUVXRKY3QB3F3UPL (4 leaves, small; ASP resolved via authoritative vouch list => immune to event-aging)",
+  "verifier_reused": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "usdc_sac_reused": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "retired_pool": "CC3CYAIP... (superseded; note: at redeploy time it actually held only 2 leaves and reconstructed cleanly)",
+  "read_verify_before_rewire": {
+    "pool_root_eq_offchain_empty_tree": "2302223575749844940221218608817648865122641281382153518325924961250440546344 (MATCH)",
+    "pool_usdc": "correct",
+    "pool_dummy_nullifier": "correct"
+  },
+  "diagnostic_note": "The retired pool CC3CYAIP was NOT classically bloated at inspection (2 leaves, no gaps, is_known(recon)=true). The reported 'could not resolve a known pool root' during dry-run was most likely STALE WALLET NOTES: a change-note leafIndex guessed wrong under RPC event lag (findLeafIndex fallback), or notes left over from before a prior pool rewire. IMPORTANT: after a pool redeploy the demo wallet MUST be reset (old notes reference the old tree) — use the 'reset demo' button. A fresh wallet spends cleanly on the new pool (confirmed by e2e).",
+  "config_change": "POOL_ID only; ASP_ID unchanged"
+}
