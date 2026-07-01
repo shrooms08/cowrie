@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="web/public/logo/cowrie-lockup.svg" alt="Cowrie" width="248" height="72">
+</p>
+
 # Cowrie
 
 **Spend stablecoin USD like cash** — your balance and identity stay private

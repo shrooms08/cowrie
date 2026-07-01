@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="248" height="72" viewBox="0 0 248 72" fill="none" role="img" aria-label="Cowrie">
+  <rect width="248" height="72" rx="16" fill="#0b0d08"/>
+  <!-- mark -->
+  <g transform="translate(18 13) scale(0.72)">
+    <ellipse cx="32" cy="33" rx="19" ry="25" fill="#B7F24A"/>
+    <rect x="27.5" y="16" width="9" height="34" rx="4.5" fill="#0b0d08"/>
+    <g fill="#B7F24A">
+      <rect x="24.5" y="19.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="24.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="29.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="34.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="39.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="44.8" width="15" height="2.4" rx="1.2"/>
+    </g>
+  </g>
+  <!-- wordmark -->
+  <text x="84" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="32" font-weight="600" letter-spacing="-0.6" fill="#eef2e6">cowrie</text>
+</svg>

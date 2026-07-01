@@ -384,9 +384,17 @@ export default function MerchantRegister() {
 }
 
 const Bean = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <ellipse cx="12" cy="12" rx="7" ry="10" fill="#b7f24a" />
-    <path d="M12 3c-2 4-2 14 0 18" stroke="#0a0f08" strokeWidth="1.4" />
+  <svg width="18" height="18" viewBox="0 0 64 64" fill="none" aria-hidden>
+    <ellipse cx="32" cy="33" rx="19" ry="25" fill="#b7f24a" />
+    <rect x="27.5" y="16" width="9" height="34" rx="4.5" fill="#0a0f08" />
+    <g fill="#b7f24a">
+      <rect x="24.5" y="19.8" width="15" height="2.4" rx="1.2" />
+      <rect x="24.5" y="24.8" width="15" height="2.4" rx="1.2" />
+      <rect x="24.5" y="29.8" width="15" height="2.4" rx="1.2" />
+      <rect x="24.5" y="34.8" width="15" height="2.4" rx="1.2" />
+      <rect x="24.5" y="39.8" width="15" height="2.4" rx="1.2" />
+      <rect x="24.5" y="44.8" width="15" height="2.4" rx="1.2" />
+    </g>
   </svg>
 );
 const ShieldBig = () => (

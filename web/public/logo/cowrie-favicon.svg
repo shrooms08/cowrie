@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="Cowrie">
+  <rect width="64" height="64" rx="14" fill="#0b0d08"/>
+  <g transform="translate(32 33) scale(0.66) translate(-32 -33)">
+    <ellipse cx="32" cy="33" rx="19" ry="25" fill="#B7F24A"/>
+    <rect x="27.5" y="16" width="9" height="34" rx="4.5" fill="#0b0d08"/>
+    <g fill="#B7F24A">
+      <rect x="24.5" y="19.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="24.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="29.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="34.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="39.8" width="15" height="2.4" rx="1.2"/>
+      <rect x="24.5" y="44.8" width="15" height="2.4" rx="1.2"/>
+    </g>
+  </g>
+</svg>
