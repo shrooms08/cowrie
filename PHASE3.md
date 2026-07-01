@@ -1,4 +1,4 @@
-# Phase 3 — Wallet UI wired to real testnet contracts (PASSED ✅)
+# Phase 3 — Wallet UI wired to real testnet contracts (PASSED)
 
 The buyer-side mobile wallet (`/web`, Next.js 15 App Router), reskinned to the
 Cowrie design mock and wired to the real Phase-2 contracts. **No mock data** —
