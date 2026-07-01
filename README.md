@@ -72,10 +72,10 @@ instructions**, ~47% of the 100M per-tx budget; the bare verify is ~40M.
   seedless key + notes (localStorage)                      create NGN invoice
         │                                                        │  quote (SEP-38)
         │  pick note + merchant + amount                         ▼
-        ▼                                              ┌─ mock anchor /api/anchor/quote
-  WASM witness builder ──► input.json                  │
-  (Rust→WASM: Poseidon2/Merkle/SMT,                    │   waits for the on-chain event
-   one source of truth with the circuit)               │            ▲
+        ▼                                               ┌─ mock anchor /api/anchor/quote
+  WASM witness builder ──► input.json                   │
+  (Rust→WASM: Poseidon2/Merkle/SMT,                     │   waits for the on-chain event
+   one source of truth with the circuit)                │            ▲
         │                                               │            │ SpendEvent(merchant, amount)
         ▼   two-step (NOT fullProve)                    │            │
   circom witness_calculator ──► snarkjs.groth16.prove   │            │
