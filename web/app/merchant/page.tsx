@@ -368,20 +368,6 @@ export default function MerchantRegister() {
               </>
             )}
           </div>
-
-          <div className="reg-card sm anchor">
-            <span className="label">Mock anchor</span>
-            <p className="hint">
-              <b>⚠ MOCK — not real fiat rails.</b> In production this is a Stellar anchor: <b>/quote → SEP-38</b>,
-              <b> /settle → SEP-31</b> (interactive off-ramp would be SEP-24).
-            </p>
-            {settle && (
-              <div className="settle-out">
-                <div>{settle.message}</div>
-                <div className="rate">rate {fmtNGN(settle.rate)} / $1 · {settle.anchor}</div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
       )}

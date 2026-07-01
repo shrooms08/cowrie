@@ -52,6 +52,25 @@ export function parsePayLink(search: string): PayLinkData | null {
   };
 }
 
+/** Defensive: return a clean merchant NAME, never a raw pay-link URL. If `value`
+ * looks like a Cowrie pay-link (a URL/query carrying a `pay` param), extract and
+ * decode that param; otherwise return the value trimmed. Used at every point the
+ * merchant name is stored or displayed so a link can never leak into the UI. */
+export function cleanMerchant(value: string | null | undefined): string {
+  if (!value) return "";
+  const v = value.trim();
+  if (/[?&]pay=/.test(v)) {
+    try {
+      const qs = v.includes("?") ? v.slice(v.indexOf("?")) : v;
+      const name = new URLSearchParams(qs).get("pay");
+      if (name) return name;
+    } catch {
+      /* fall through */
+    }
+  }
+  return v;
+}
+
 /** A short human-readable display pay-ID, e.g. "COWRIE-7F3A". Display/label only
  * — the real data rides in the link. */
 export function makePayId(): string {

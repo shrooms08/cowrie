@@ -9,5 +9,12 @@
   "buyer": "loading the link auto-fills a LOCKED invoice card: merchant name, 'Pay $25.00 USDC ≈ ₦42,500', rate 'anchor quote (SEP-38, mock)', Pay ID, receiving address. No amount input (buyer can't change it).",
   "critical_match": "amount + address ride in the link into the real spend. e2e: link amt=25/addr=<G>; buyer paid $25.00; merchant real USDC +25.00 AT the invoice address; register flipped. amount_address_match=true.",
   "e2e": "R6 PAY-LINK + QR + LOCAL CURRENCY ✓ — merchant $25 (NGN42,500) invoice -> pay-ID+QR+link; buyer loads -> auto-filled $25 + ≈NGN42,500 + pay-ID, locked; pays -> merchant real USDC +25 at invoice addr -> register flips; paid amount/addr match invoice exactly",
-  "build": "next build green"
+  "build": "next build green",
+  "display_fix": {
+    "bug": "Paid screen TO line (and activity/receipt) could show the raw pay-link URL instead of the merchant name — root cause: a full pay-link URL pasted into the manual Merchant field was stored verbatim as merchant.",
+    "fix": "lib/paylink.ts cleanMerchant(value): if a value carries a `pay` param (a URL/query), extract+decode it; else return trimmed. Applied at (1) doPay — bind merchantToField + store payment.merchant + Paid via the CLEAN name; (2) manual Merchant input — a pasted pay-link now auto-loads as an invoice (clean name + amount + addr), never stored raw; (3) display sites — Paid to-line, activity rows, receipt sheet + blob merchantName all cleaned (also fixes any already-stored URL).",
+    "display_only": "underlying spend already used the parsed amount+address; payment still correct.",
+    "e2e": "R6 MERCHANT-NAME DISPLAY FIX ✓ — paste full URL into merchant field -> invoice auto-loads as \"Minos Akara\" (no raw URL); pay -> Paid to-line \"to Minos Akara · clean\"; activity \"Minos Akara\"; merchant real USDC +15. cleanMerchant unit-tested (7 cases).",
+    "fallback_commit": "88de4da (fix is uncommitted working tree)"
+  }
 }

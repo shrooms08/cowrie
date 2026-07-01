@@ -21,7 +21,7 @@ import { encodeReceipt, proveReceipt, receiptPublicHex } from "@/lib/receiptProv
 import { selectCoins, type SelectionResult } from "@/lib/coinSelection";
 import { getMerchant, merchantKeypair } from "@/lib/merchantWallet";
 import { isValidHandle, slugifyHandle } from "@/lib/names";
-import { parsePayLink, fmtFiat, type PayLinkData } from "@/lib/paylink";
+import { parsePayLink, fmtFiat, cleanMerchant, type PayLinkData } from "@/lib/paylink";
 
 // The canonical dummy input (slot 0 of a single-note spend): value-less, fixed
 // nullifier the pool ignores. Matches DUMMY_PRIV/DUMMY_BLIND in the Rust crate.
@@ -248,7 +248,10 @@ export default function Page() {
       ]);
       const noteAspIndex = myAspIndex >= 0 ? myAspIndex : aspLeaves.indexOf(aspLeaf);
       const dummyAspIndex = Math.max(0, aspLeaves.indexOf(dummyLeaf));
-      const merchantId = merchantToField(merchant);
+      // Always bind/store the clean merchant NAME — never a raw pay-link URL that
+      // may have leaked into the field. merchantToField must match the register's.
+      const merchantName = cleanMerchant(merchant);
+      const merchantId = merchantToField(merchantName);
 
       // Build EXACTLY 2 inputs. Slot 1 is always a real note (it backs the
       // SpendEvent nullifier + the receipt). Single-note spend: slot0 = dummy.
@@ -356,7 +359,7 @@ export default function Page() {
 
       setStep("done");
       const payment: Payment = {
-        merchant,
+        merchant: merchantName,
         amount,
         txHash: res.hash,
         at: Date.now(),
@@ -371,7 +374,7 @@ export default function Page() {
         aspIndex: noteAspIndex,
         payments: [payment, ...w.payments],
       });
-      setPaid({ amount, change, merchant, hash: res.hash, payment });
+      setPaid({ amount, change, merchant: merchantName, hash: res.hash, payment });
       setPayAmount("");
     } catch (e) {
       setStep("idle");
@@ -385,7 +388,7 @@ export default function Page() {
   // single named recipient R. Real in-browser proving + a real on-chain verify.
   function openReceipt(p: Payment) {
     setReceiptFor(p);
-    setReceiptRecipient(p.merchant);
+    setReceiptRecipient(cleanMerchant(p.merchant));
     setReceiptStep("idle");
     setReceiptBlob(null);
     setReceiptVerifyTx(null);
@@ -429,7 +432,7 @@ export default function Page() {
         amount: noteAmount,
         payout: p.amount,
         merchant: p.merchantField,
-        merchantName: p.merchant,
+        merchantName: cleanMerchant(p.merchant),
         recipient: recipientField,
         recipientName: receiptRecipient,
       });
@@ -735,7 +738,25 @@ export default function Page() {
                 <>
                   <div className="field">
                     <label>Merchant</label>
-                    <input className="input" value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="open a merchant invoice link, or type a name" />
+                    <input
+                      className="input"
+                      value={merchant}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        // If a full pay-link is pasted, load it as an invoice
+                        // (so the raw URL is never stored as the merchant name).
+                        const inv = /[?&]pay=/.test(v) ? parsePayLink(v.includes("?") ? v.slice(v.indexOf("?")) : v) : null;
+                        if (inv) {
+                          setPayInvoice(inv);
+                          setMerchant(inv.merchantName);
+                          setMerchantAddr(inv.addr);
+                          setPayAmount(String(inv.usdc));
+                        } else {
+                          setMerchant(cleanMerchant(v));
+                        }
+                      }}
+                      placeholder="open a merchant invoice link, or type a name"
+                    />
                   </div>
                   <div className="field">
                     <label>Amount (USDC)</label>
@@ -833,7 +854,7 @@ export default function Page() {
               </div>
               <h2>Paid</h2>
               <div className="amt">${paid.amount}.00</div>
-              <span className="label">to {paid.merchant} · clean</span>
+              <span className="label">to {cleanMerchant(paid.merchant)} · clean</span>
               {paid.change > 0 && (
                 <div className="change-chip">
                   <Bean s={14} /> ${paid.change}.00 change returned privately
@@ -871,7 +892,7 @@ export default function Page() {
                   <button className="back" onClick={() => setReceiptFor(null)}>← back</button>
                   <h2>Share a receipt</h2>
                   <p className="hint" style={{ marginBottom: 18 }}>
-                    Prove you paid <b>${receiptFor.amount}.00 to {receiptFor.merchant}</b> — to one party you
+                    Prove you paid <b>${receiptFor.amount}.00 to {cleanMerchant(receiptFor.merchant)}</b> — to one party you
                     choose. The receipt reveals only that payment. It is valid <b>only</b> for the recipient you
                     name, and discloses nothing about your wallet, balance, identity, or other payments.
                   </p>
@@ -946,8 +967,10 @@ function spendError(e: unknown): string {
 type ActivityRow = { initial: string; name: string; meta: string; amount: string; status: string; positive: boolean; at: number; payment?: Payment };
 function buildActivity(w: WalletState): ActivityRow[] {
   const rows: ActivityRow[] = [];
-  for (const p of w.payments)
-    rows.push({ initial: p.merchant[0]?.toUpperCase() ?? "?", name: p.merchant, meta: timeAgo(p.at), amount: `−$${p.amount}.00`, status: "paid · clean", positive: false, at: p.at, payment: p.noteId ? p : undefined });
+  for (const p of w.payments) {
+    const mName = cleanMerchant(p.merchant);
+    rows.push({ initial: mName[0]?.toUpperCase() ?? "?", name: mName, meta: timeAgo(p.at), amount: `−$${p.amount}.00`, status: "paid · clean", positive: false, at: p.at, payment: p.noteId ? p : undefined });
+  }
   for (const n of w.notes)
     rows.push({ initial: "+", name: "Top up", meta: `note · leaf #${n.leafIndex}`, amount: `+$${n.amount}.00`, status: n.spent ? "spent" : "private", positive: true, at: n.createdAt });
   return rows.sort((a, b) => b.at - a.at).slice(0, 6);
