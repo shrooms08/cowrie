@@ -133,6 +133,34 @@ body { min-height: 100vh; overflow-x: hidden; }
 .merch-acct .mdot, .mdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted2); flex: none; }
 .merch-acct .mdot.ok, .mdot.ok { background: var(--green); box-shadow: 0 0 8px var(--green-line); }
 
+/* Buyer wallet panel (Phase R3, Level A) — public account + real USDC */
+.wallet-card { border: 1px solid var(--border); background: var(--card); border-radius: 16px; padding: 14px 16px; margin: 4px 0 8px; }
+.wc-top { display: flex; justify-content: space-between; align-items: baseline; }
+.wc-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.wc-bal { font-size: 20px; font-weight: 700; }
+.wc-addr { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.wc-k { font-family: var(--mono); font-size: 11px; color: var(--muted2); }
+.wc-copy { font-family: var(--mono); font-size: 11px; color: var(--green); background: var(--green-dim); border: 1px solid var(--green-line); border-radius: 8px; padding: 4px 8px; cursor: pointer; }
+.wc-hint { font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.5; margin-top: 9px; }
+.wc-hint b { color: var(--text); }
+/* deposit move visualization: wallet (public) -> Cowrie (private) */
+.move-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 14px; }
+.move-box { flex: 1; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.move-box.priv { border-color: var(--green-line); background: var(--green-dim); }
+.move-box .mk { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.move-box .mv { font-size: 18px; font-weight: 700; }
+.move-box.priv .mv { color: var(--green); }
+.move-arrow { align-self: center; color: var(--muted2); font-size: 18px; }
+
+/* Merchant sign-in + account panel (Phase R3, Part B) */
+.signin-card { grid-column: 1 / -1; max-width: 460px; }
+.switch-merch { font-family: var(--mono); font-size: 11px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px; cursor: pointer; margin-right: 10px; }
+.switch-merch:hover { color: var(--text); border-color: var(--muted2); }
+.merch-panel .mp-name { font-size: 17px; font-weight: 700; margin: 6px 0 10px; }
+.mp-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+.mp-k { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.mp-v { font-weight: 600; }
+
 .err { background: var(--red-bg); color: var(--red); border: 1px solid #5c2b2e; border-radius: 12px; padding: 12px 14px; font-size: 13px; margin: 10px 0; font-family: var(--mono); }
 .hint { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.5; }
 

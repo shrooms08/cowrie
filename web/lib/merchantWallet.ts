@@ -1,10 +1,8 @@
-// Persistent merchant identity for the register (Phase R2-1). A merchant needs a
-// real Stellar account with a USDC trustline to RECEIVE the on-chain payout. We
-// auto-provision one (friendbot XLM + USDC trustline) and persist it, then embed
-// its address in the buyer pay-link so the pool can send real USDC to it.
-//
-// Shares localStorage origin with the buyer wallet, so the buyer's Pay screen can
-// fall back to this address for manually-typed (non-pay-link) merchant payments.
+// Seedless MERCHANT identity (Phase R3). Symmetric with the buyer wallet, NOT
+// real auth: "signing in" means claiming a business name and getting a real
+// Stellar receiving account (with a USDC trustline) provisioned for it. Persisted
+// locally under its OWN storage key so it never collides with the buyer wallet
+// (cowrie.wallet.v1). Reopening /merchant keeps you as the same merchant.
 import { Keypair } from "@stellar/stellar-sdk";
 
 const KEY = "cowrie.merchant.v1";
@@ -12,26 +10,43 @@ const KEY = "cowrie.merchant.v1";
 export interface MerchantWallet {
   stellarSecret: string;
   name: string;
+  createdAt: number;
 }
 
-export function loadMerchant(): MerchantWallet {
-  if (typeof window !== "undefined") {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      try {
-        return JSON.parse(raw) as MerchantWallet;
-      } catch {
-        /* fall through */
-      }
-    }
+/** The current merchant identity, or null if none has been created yet. Does NOT
+ * auto-provision — the /merchant page decides when to create one. */
+export function getMerchant(): MerchantWallet | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(KEY);
+  if (!raw) return null;
+  try {
+    const m = JSON.parse(raw) as MerchantWallet;
+    return m.stellarSecret && m.name ? m : null;
+  } catch {
+    return null;
   }
-  const m: MerchantWallet = { stellarSecret: Keypair.random().secret(), name: "Buka Express" };
+}
+
+/** Provision a fresh merchant identity for `name` (new receiving account). */
+export function createMerchant(name: string): MerchantWallet {
+  const m: MerchantWallet = { stellarSecret: Keypair.random().secret(), name: name.trim() || "Merchant", createdAt: Date.now() };
   if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(m));
   return m;
 }
 
+/** Get the current merchant, or create one with a default name (buyer-side
+ * fallback for a manual payment with no pay-link address). */
+export function ensureMerchant(defaultName = "Buka Express"): MerchantWallet {
+  return getMerchant() ?? createMerchant(defaultName);
+}
+
 export function saveMerchant(m: MerchantWallet): void {
   if (typeof window !== "undefined") localStorage.setItem(KEY, JSON.stringify(m));
+}
+
+/** Forget the current merchant (demo "switch/reset merchant"). */
+export function clearMerchant(): void {
+  if (typeof window !== "undefined") localStorage.removeItem(KEY);
 }
 
 export function merchantKeypair(m: MerchantWallet): Keypair {

@@ -1,0 +1,21 @@
+{
+  "phase": "R3 — visible buyer wallet (Level A) + seedless merchant accounts",
+  "date": "2026-07-01",
+  "fallback_commit": "8cb9b86",
+  "no_contract_changes": true,
+  "contracts_unchanged": "pool CBTOBHYH, asp CBFTHBUN, verifier CCKJHEGD, usdc SAC CBIELTK6 (R2-1)",
+  "storage_keys": { "buyer": "cowrie.wallet.v1", "merchant": "cowrie.merchant.v1", "collision": "none (distinct keys)" },
+  "e2e_one_laptop_loop": {
+    "harness": "playwright, ONE context / two pages (shared localStorage) — merchant register + buyer wallet",
+    "part_a_buyer_wallet": "wallet card shows address (GBKGV7…SPIQ) + real public USDC $100.00; private balance $0.00 distinct",
+    "part_a_deposit_move": "$50 deposit: wallet public 100.00 → 50.00, private 0.00 → 50.00 (visible move)",
+    "part_b_signin": "sign-in gate shown when no merchant; created 'Test Merchant' → receiving account GA42F5…POMK",
+    "part_b_persist": "reload keeps same merchant name + receiving address",
+    "pay": "buyer paid $25 invoice → merchant REAL USDC 0 → 25 (Δ 25.00); merchant panel USDC updated to $25.00",
+    "register_flip": "flipped to Paid. Verified clean. on the real SpendEvent",
+    "state_separation": "both cowrie.wallet.v1 + cowrie.merchant.v1 present; merchant name intact; no collision",
+    "receipt": "generated + on-chain verified (receipt_ok)",
+    "cant_cover": "graceful message, no crash",
+    "verdict": "R3 ONE-LAPTOP LOOP ✓"
+  }
+}

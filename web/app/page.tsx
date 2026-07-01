@@ -19,7 +19,7 @@ import { prove, proofToSorobanHex } from "@/lib/prover";
 import { merchantToField } from "@/lib/merchant";
 import { encodeReceipt, proveReceipt, receiptPublicHex } from "@/lib/receiptProver";
 import { selectCoins, type SelectionResult } from "@/lib/coinSelection";
-import { loadMerchant, merchantKeypair } from "@/lib/merchantWallet";
+import { ensureMerchant, merchantKeypair } from "@/lib/merchantWallet";
 
 // The canonical dummy input (slot 0 of a single-note spend): value-less, fixed
 // nullifier the pool ignores. Matches DUMMY_PRIV/DUMMY_BLIND in the Rust crate.
@@ -68,6 +68,7 @@ export default function Page() {
   const [receiptBlob, setReceiptBlob] = useState<string | null>(null);
   const [receiptVerifyTx, setReceiptVerifyTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [addrCopied, setAddrCopied] = useState(false);
 
   const update = (next: WalletState) => {
     setW(next);
@@ -171,7 +172,19 @@ export default function Page() {
         createdAt: Date.now(),
       };
       update(addNote(w, note));
-      chain.usdcBalance(kp.publicKey()).then(setUsdcBal).catch(() => {}); // real USDC left the wallet
+      // Real USDC left the wallet. Horizon lags the Soroban tx by a moment, so
+      // poll until the public balance reflects the decrease.
+      const prevUsdc = usdcBal ?? 0;
+      (async () => {
+        for (let i = 0; i < 10; i++) {
+          const b = await chain.usdcBalance(kp.publicKey()).catch(() => null);
+          if (b !== null) {
+            setUsdcBal(b);
+            if (b <= prevUsdc - depDenom + 0.001) break;
+          }
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      })();
       setScreen("home");
     } catch (e) {
       setErr(`deposit failed: ${e instanceof Error ? e.message : e}`);
@@ -279,7 +292,7 @@ export default function Page() {
       setWorking("preparing merchant payout address…");
       let payTo = merchantAddr;
       if (!payTo) {
-        const mkp = merchantKeypair(loadMerchant());
+        const mkp = merchantKeypair(ensureMerchant());
         await chain.ensureFunded(mkp.publicKey());
         await chain.establishUsdcTrustline(mkp);
         payTo = mkp.publicKey();
@@ -462,7 +475,7 @@ export default function Page() {
             </div>
 
             <div className="balance-row">
-              <span className="label">Balance</span>
+              <span className="label">Cowrie private balance · in the pool</span>
               <button
                 className="iconbtn"
                 style={{ width: 22, height: 22, border: "none", background: "none" }}
@@ -481,6 +494,32 @@ export default function Page() {
               <span className="pill">
                 <ShieldIcon /> PRIVATE
               </span>
+            </div>
+
+            {/* Wallet panel (Level A): the account that already exists + its REAL
+                on-chain USDC — public, BEFORE it enters the private pool. */}
+            <div className="wallet-card">
+              <div className="wc-top">
+                <span className="wc-label">Wallet · public USDC</span>
+                <span className="wc-bal">{usdcBal === null ? "…" : `$${usdcBal.toFixed(2)}`}</span>
+              </div>
+              <div className="wc-addr">
+                <span className="wc-k">{w.handle}.cowrie account</span>
+                <button
+                  className="wc-copy"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(kp.publicKey());
+                    setAddrCopied(true);
+                    setTimeout(() => setAddrCopied(false), 1500);
+                  }}
+                  title={kp.publicKey()}
+                >
+                  {addrCopied ? "copied ✓" : `${kp.publicKey().slice(0, 6)}…${kp.publicKey().slice(-4)} ⧉`}
+                </button>
+              </div>
+              <div className="wc-hint">
+                real testnet USDC in your account. <b>Deposit</b> moves it into your private Cowrie balance above.
+              </div>
             </div>
 
             <div className="actions">
@@ -551,15 +590,23 @@ export default function Page() {
               <button className="back" onClick={() => setScreen("home")}>
                 ← back
               </button>
-              <h2>Top up a private note</h2>
+              <h2>Move USDC into Cowrie</h2>
               <p className="hint" style={{ marginBottom: 14 }}>
-                Pick a fixed denomination — this deposits <b>real testnet USDC</b> from your wallet into the
-                pool and mints a private note. The chain sees only the commitment, never an amount or identity.
+                Deposit moves <b>real testnet USDC</b> from your wallet into your private Cowrie balance and mints
+                a private note. The chain sees only the commitment, never an amount or identity.
               </p>
-              <div className="usdc-avail">
-                available: <b>{usdcBal === null ? "…" : `${usdcBal.toFixed(2)} USDC`}</b>
-                {onboard === "ready" && <span className="ok"> · rail live</span>}
+              <div className="move-row">
+                <div className="move-box">
+                  <span className="mk">Wallet · public</span>
+                  <span className="mv">{usdcBal === null ? "…" : `$${usdcBal.toFixed(2)}`}</span>
+                </div>
+                <span className="move-arrow">→</span>
+                <div className="move-box priv">
+                  <span className="mk">Cowrie · private</span>
+                  <span className="mv">${balance.toFixed(2)}</span>
+                </div>
               </div>
+              {onboard === "ready" && <div className="usdc-avail"><span className="ok">rail live ✓</span></div>}
               {onboard === "dex-dry" && (
                 <div className="plan cant" style={{ marginBottom: 12 }}>
                   Couldn’t get testnet USDC: {onboardMsg}. The DEX may be dry.

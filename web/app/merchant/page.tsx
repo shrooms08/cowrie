@@ -2,7 +2,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as chain from "@/lib/contracts";
 import { ANCHOR_RATE_NGN_PER_USDC, fmtNGN, merchantToField, quoteFromNgn } from "@/lib/merchant";
-import { loadMerchant, merchantKeypair, saveMerchant } from "@/lib/merchantWallet";
+import {
+  clearMerchant,
+  createMerchant,
+  getMerchant,
+  merchantKeypair,
+  type MerchantWallet,
+} from "@/lib/merchantWallet";
 
 type State = "new" | "awaiting" | "paid";
 interface Settlement {
@@ -15,8 +21,13 @@ interface Settlement {
 }
 
 export default function MerchantRegister() {
-  const [merchantName, setMerchantName] = useState("Buka Express");
-  const [ngnInput, setNgnInput] = useState("8500");
+  // Seedless merchant identity (Phase R3). Null until the user "signs in" by
+  // claiming a business name; then a real receiving account is provisioned.
+  const [merchant, setMerchant] = useState<MerchantWallet | null>(null);
+  const [nameInput, setNameInput] = useState("Test Merchant");
+  const [signingIn, setSigningIn] = useState(false);
+
+  const [ngnInput, setNgnInput] = useState("42500");
   const [description, setDescription] = useState("Jollof + drink");
   const [state, setState] = useState<State>("new");
 
@@ -26,43 +37,74 @@ export default function MerchantRegister() {
   const [settle, setSettle] = useState<Settlement | null>(null);
   const [note, setNote] = useState<string>("");
 
-  // The merchant's receiving account (real USDC payout target, Phase R2-1).
+  // The merchant's receiving account (real USDC payout target).
   const [merchantAddr, setMerchantAddr] = useState<string | null>(null);
   const [merchantReady, setMerchantReady] = useState(false);
-  const [merchantMsg, setMerchantMsg] = useState("provisioning merchant account…");
+  const [merchantMsg, setMerchantMsg] = useState("");
+  const [merchantUsdc, setMerchantUsdc] = useState<number | null>(null);
+  const [addrCopied, setAddrCopied] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const m = loadMerchant();
-      const kp = merchantKeypair(m);
-      setMerchantAddr(kp.publicKey());
-      try {
-        setMerchantMsg("funding merchant XLM…");
-        await chain.ensureFunded(kp.publicKey());
-        setMerchantMsg("establishing USDC trustline…");
-        await chain.establishUsdcTrustline(kp); // needed to RECEIVE the payout
-        if (!cancelled) {
-          setMerchantReady(true);
-          setMerchantMsg("ready to receive USDC");
-        }
-      } catch (e) {
-        if (!cancelled) setMerchantMsg(`merchant onboarding failed: ${e instanceof Error ? e.message : e}`);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const merchantName = merchant?.name ?? "";
+  const merchantId = merchantName ? merchantToField(merchantName) : "";
+
+  // Onboard a merchant identity: fund XLM + a USDC trustline so it can RECEIVE.
+  const onboardMerchant = useCallback(async (m: MerchantWallet) => {
+    const kp = merchantKeypair(m);
+    setMerchantAddr(kp.publicKey());
+    setMerchantReady(false);
+    try {
+      setMerchantMsg("funding merchant XLM…");
+      await chain.ensureFunded(kp.publicKey());
+      setMerchantMsg("establishing USDC trustline…");
+      await chain.establishUsdcTrustline(kp); // needed to RECEIVE the payout
+      setMerchantReady(true);
+      setMerchantMsg("ready to receive USDC");
+      chain.usdcBalance(kp.publicKey()).then(setMerchantUsdc).catch(() => {});
+    } catch (e) {
+      setMerchantMsg(`merchant onboarding failed: ${e instanceof Error ? e.message : e}`);
+    }
   }, []);
 
-  // Persist the merchant name so the payout target keeps a stable identity.
+  // On mount: resume an existing merchant identity (persisted across reload).
   useEffect(() => {
-    const m = loadMerchant();
-    if (m.name !== merchantName) saveMerchant({ ...m, name: merchantName });
-  }, [merchantName]);
+    const m = getMerchant();
+    if (m) {
+      setMerchant(m);
+      onboardMerchant(m);
+    }
+  }, [onboardMerchant]);
+
+  // "Sign in": claim a name -> provision a receiving account for it.
+  async function doSignIn() {
+    if (!nameInput.trim() || signingIn) return;
+    setSigningIn(true);
+    const m = createMerchant(nameInput);
+    setMerchant(m);
+    await onboardMerchant(m);
+    setSigningIn(false);
+  }
+
+  // "Switch merchant": forget this identity (demo re-run).
+  function switchMerchant() {
+    clearMerchant();
+    setMerchant(null);
+    setMerchantAddr(null);
+    setMerchantReady(false);
+    setMerchantUsdc(null);
+    setState("new");
+    setInvoice(null);
+    setPaidEvent(null);
+    setSettle(null);
+  }
+
+  function copyAddr() {
+    if (!merchantAddr) return;
+    navigator.clipboard?.writeText(merchantAddr);
+    setAddrCopied(true);
+    setTimeout(() => setAddrCopied(false), 1500);
+  }
 
   const quote = quoteFromNgn(Number(ngnInput) || 0);
-  const merchantId = merchantToField(merchantName);
   // Pay-link carries the merchant's Stellar address so the pool sends real USDC to it.
   const payLink =
     invoice && merchantAddr
@@ -95,6 +137,8 @@ export default function MerchantRegister() {
       if (match) {
         setPaidEvent(match);
         setState("paid");
+        // the payout landed in the merchant's REAL account — refresh its balance.
+        if (merchantAddr) chain.usdcBalance(merchantAddr).then(setMerchantUsdc).catch(() => {});
         // mock anchor settles ONLY after independently verifying the spend.
         const s = await fetch("/api/anchor/settle", {
           method: "POST",
@@ -106,7 +150,7 @@ export default function MerchantRegister() {
     } catch (e) {
       setNote(`watching… (${e instanceof Error ? e.message.slice(0, 40) : e})`);
     }
-  }, [state, invoice, sinceLedger, merchantName]);
+  }, [state, invoice, sinceLedger, merchantName, merchantAddr]);
 
   useEffect(() => {
     if (state === "awaiting" && sinceLedger) {
@@ -124,13 +168,46 @@ export default function MerchantRegister() {
         <div className="reg-brand">
           <Bean />
           <span>COWRIE REGISTER</span>
-          <span className="reg-loc">· LAGOS / ONLINE</span>
+          {merchant && <span className="reg-loc">· {merchantName}</span>}
         </div>
         <div className="reg-status">
-          <span className="dot" /> {state === "paid" ? "SETTLED" : "OPEN"}
+          {merchant && (
+            <button className="switch-merch" onClick={switchMerchant} title="forget this merchant (demo re-run)">
+              switch merchant
+            </button>
+          )}
+          <span className="dot" /> {state === "paid" ? "SETTLED" : merchant ? "OPEN" : "SIGNED OUT"}
         </div>
       </div>
 
+      {/* Seedless merchant sign-in: claim a name -> get a receiving account. */}
+      {!merchant ? (
+        <div className="reg-grid">
+          <div className="reg-card signin-card">
+            <span className="label">Sign in as a merchant</span>
+            <p className="hint" style={{ margin: "8px 0 18px" }}>
+              Claim a business name — Cowrie provisions a real <b>receiving account</b> (a Stellar address with a
+              USDC trustline) for it. Payouts land there. No password, no seed phrase — this is <b>reveal + provision</b>,
+              not sign-up.
+            </p>
+            <div className="field">
+              <label>Business name</label>
+              <input
+                className="reg-input"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && doSignIn()}
+                placeholder="e.g. Test Merchant"
+                autoFocus
+              />
+            </div>
+            {merchantMsg && signingIn && <div className="merch-acct"><span className="mdot" /> {merchantMsg}</div>}
+            <button className="reg-btn" onClick={doSignIn} disabled={signingIn || !nameInput.trim()}>
+              {signingIn ? "Provisioning account…" : "Create merchant account"}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="reg-grid">
         {/* charge column */}
         <div className="reg-card">
@@ -145,10 +222,6 @@ export default function MerchantRegister() {
                 <label>For</label>
                 <input className="reg-input" value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
-              <div className="field">
-                <label>Merchant</label>
-                <input className="reg-input" value={merchantName} onChange={(e) => setMerchantName(e.target.value)} />
-              </div>
               <div className="quote-line">
                 buyer pays <b>${quote.usdc}.00 USDC</b> · settles to <b>{fmtNGN(quote.ngn)}</b>
                 <span className="rate"> @ {quote.rateLabel} · {quote.sep}</span>
@@ -156,9 +229,9 @@ export default function MerchantRegister() {
               <div className="merch-acct">
                 <span className={"mdot" + (merchantReady ? " ok" : "")} />
                 {merchantReady && merchantAddr ? (
-                  <>receiving USDC at <span className="mono">{merchantAddr.slice(0, 6)}…{merchantAddr.slice(-4)}</span></>
+                  <>as <b>{merchantName}</b> · receiving at <span className="mono">{merchantAddr.slice(0, 6)}…{merchantAddr.slice(-4)}</span></>
                 ) : (
-                  <>{merchantMsg}</>
+                  <>{merchantMsg || "setting up merchant account…"}</>
                 )}
               </div>
               <button className="reg-btn" onClick={generate} disabled={!quote.usdc || !merchantReady}>
@@ -206,6 +279,29 @@ export default function MerchantRegister() {
 
         {/* privacy + anchor column */}
         <div className="reg-side">
+          {/* Merchant account panel — the real receiving account + its USDC. */}
+          <div className="reg-card sm merch-panel">
+            <span className="label">Merchant account</span>
+            <div className="mp-name">{merchantName}</div>
+            <div className="mp-row">
+              <span className="mp-k">receiving USDC</span>
+              <span className="mp-v">{merchantUsdc === null ? "…" : `$${merchantUsdc.toFixed(2)}`}</span>
+            </div>
+            <div className="mp-row">
+              <span className="mp-k">address</span>
+              {merchantAddr ? (
+                <button className="wc-copy" onClick={copyAddr} title={merchantAddr}>
+                  {addrCopied ? "copied ✓" : `${merchantAddr.slice(0, 6)}…${merchantAddr.slice(-4)} ⧉`}
+                </button>
+              ) : (
+                <span className="mp-v">…</span>
+              )}
+            </div>
+            <div className="merch-acct" style={{ marginTop: 4 }}>
+              <span className={"mdot" + (merchantReady ? " ok" : "")} /> {merchantReady ? "ready to receive" : merchantMsg}
+            </div>
+          </div>
+
           <div id="privacy" className="reg-card sm">
             <span className="label">What the register learns</span>
             <ul className="seelist good">
@@ -253,6 +349,7 @@ export default function MerchantRegister() {
           </div>
         </div>
       </div>
+      )}
       {note && <div className="reg-note">{note}</div>}
       <a className="reg-back" href="/">← buyer wallet</a>
     </div>
