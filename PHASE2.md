@@ -26,7 +26,7 @@ on-chain via `soroban-sdk` 26's `poseidon2_permutation` host function (feature
   **64-root history ring** so a proof against a slightly stale root still verifies.
   Empty leaves use the Poseidon2("XLM") `get_zeroes` convention.
 - `deposit(amount, commitment)` — denomination-checked, single-leaf insert, emits
-  `DepositEvent{amount, commitment, index, root}`. ⚠️ **MOCK:** the USDC
+  `DepositEvent{amount, commitment, index, root}`.  **MOCK:** the USDC
   transfer-in is not performed (Phase 5/6).
 - Spent-nullifier set (`Map<U256,bool>`).
 - `spend(...)` — the integration point (below).
@@ -37,7 +37,7 @@ on-chain via `soroban-sdk` 26's `poseidon2_permutation` host function (feature
   STAND-IN for the ASP service), `get_root()`. Root recomputed from a stored leaf
   vector so removal works.
 - **blocklist** non-membership root: admin-set `set_blocklist_root` /
-  `get_blocklist_root`. ⚠️ STAND-IN — see §3b.
+  `get_blocklist_root`.  STAND-IN — see §3b.
 
 ## §3b — where does the blocklist root live?
 
@@ -62,7 +62,7 @@ Checks, in order — rejecting on the first failure:
 6. **verify** the proof: builds the 11 public inputs in circuit-declared order and
    cross-calls `verifier.verify_bytes`.
 7. only if all pass: record nullifiers, emit `SpendEvent{merchant, payout,
-   nullifier}`. ⚠️ MOCK payout transfer.
+   nullifier}`.  MOCK payout transfer.
 
 Public-input order matches Phase 1 exactly: `root, publicAmount, extDataHash,
 inputNullifier[2], outputCommitment[2], membershipRoots[2], nonMembershipRoots[2]`
