@@ -1,4 +1,4 @@
-# Phase 1 — Real circuits + trusted setup (PASSED ✅)
+# Phase 1 — Real circuits + trusted setup (PASSED)
 
 **Goal:** a single Groth16 proof that proves spend **and** clean-funds together —
 generated and verified HEADLESS, on Stellar testnet, before any UI.
@@ -99,7 +99,7 @@ This real circuit (11 public inputs) = **40,019,012** CPU → **+12.8M for 10 ex
 public inputs ≈ 1.28M CPU per input** (one `g1_mul`+`g1_add` each — cheap vs. the
 pairing). **Comfortably under the 100M budget.**
 
-## Clean-funds constraint is load-bearing ✅ (critical check)
+## Clean-funds constraint is load-bearing (critical check)
 
 A note that is **NOT** in the ASP allowlist tree cannot produce a valid proof. With an
 otherwise-identical witness whose ASP tree does *not* contain the note's membership
