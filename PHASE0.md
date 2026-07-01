@@ -1,4 +1,4 @@
-# Phase 0 — Kill Switch (PASSED ✅)
+# Phase 0 — Kill Switch (PASSED)
 
 **Goal:** prove ONE Groth16 proof verifies on a Soroban verifier contract deployed to
 Stellar **testnet (Protocol 27)** via the native BN254 host functions. Nothing else.
@@ -51,7 +51,7 @@ Artifacts: `scratchpad/killswitch/` (circuit, keys, proof) and `scratchpad/verif
 
 ---
 
-# Phase 0b — Arkworks prover validation (PASSED ✅)
+# Phase 0b — Arkworks prover validation (PASSED)
 
 **Goal:** prove a Groth16 proof from the **arkworks** prover (no snarkjs in the proving
 step) verifies TRUE on a Soroban BN254 verifier on testnet — de-risking the Phase 4
@@ -81,7 +81,7 @@ with that arkworks VK embedded and deployed.
   string (`"33"`).
 - **Point A passed as-is** — the contract computes `-A` internally; no client-side negation.
 - Coordinates are plain integers (`into_bigint().to_bytes_be()`), **not** Montgomery.
-- ⚠️ Do **NOT** use arkworks' native `CanonicalSerialize` (`proof.serialize_*`): it is
+- Do **NOT** use arkworks' native `CanonicalSerialize` (`proof.serialize_*`): it is
   little-endian with different Fp2 ordering + flag bits. Use the explicit big-endian
   `x/y`, `c1/c0` layout above — i.e. `circuit_keys::{g1,g2}_to_soroban_bytes`.
 - **No snarkjs↔arkworks gap appeared** (no c0/c1 flip, no endianness retry) because both
