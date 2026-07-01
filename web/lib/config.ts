@@ -5,13 +5,19 @@ export const RPC_URL = "https://soroban-testnet.stellar.org";
 export const HORIZON_URL = "https://horizon-testnet.stellar.org";
 export const FRIENDBOT_URL = "https://friendbot.stellar.org";
 
-// R2-1 (Phase R2-1): REAL USDC rail is now canonical. The pool pulls real USDC
-// on deposit (from.require_auth rooted at deposit) and sends real USDC to the
-// merchant on payout; change stays a private note. Change-enabled + arbitrary
-// payout (deposits stay fixed-denom). Verifier unchanged; fresh ASP (dummy@0 +
-// blocklist seeded). Verified on-chain before this rewire (see deployments/testnet/r2-1.json).
-export const POOL_ID = "CBTOBHYHYVKTQLSNQQ3LPEVWMPQ5C4B2HEP6FQJR4YYM5HCDXABKX5CZ";
-export const ASP_ID = "CBFTHBUNVWEFS6JHBQ2YVJ34I64BRRRXF7DQTWM2FDYMKMT6UDXLPUHJ";
+// REAL USDC rail (canonical). The pool pulls real USDC on deposit
+// (from.require_auth rooted at deposit) and sends real USDC to the merchant on
+// payout; change stays a private note. Change-enabled + arbitrary payout
+// (deposits stay fixed-denom). Verifier + USDC SAC reused.
+//
+// Fresh small-tree redeploy (pre-demo reset): the prior pool/ASP accumulated
+// enough leaves that early leaf events aged out of the public RPC's ~8000-ledger
+// event window, making tree reconstruction impossible (unknown-pool-root /
+// ASP-root-mismatch). These are freshly deployed + seeded (pool empty-tree root,
+// ASP dummy@0 + blocklist), verified on-chain BEFORE this rewire. See
+// deployments/testnet/r7-redeploy.json.
+export const POOL_ID = "CC3CYAIPGC6GOQNYZWLJEZ3OJ2HKPLHHLJXBIJLTKWF6BUY76LDZ3FRI";
+export const ASP_ID = "CCD33Z46QFHZOA4FCUM6DND7H6WGUK5VSX2YUZV5PUVXRKY3QB3F3UPL";
 export const VERIFIER_ID = "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T";
 
 // USDC Stellar Asset Contract (testnet) — the real rail the pool pulls/sends.

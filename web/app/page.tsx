@@ -238,12 +238,14 @@ export default function Page() {
       if (vouch.error) throw new Error(`ASP vouch: ${vouch.error}`);
 
       setStep("build");
-      // Reconstruct both trees from on-chain events (real client model) and
-      // resolve them to roots the contract accepts — handles RPC event lag and
-      // other depositors. Overlays our own leaves which we always know.
+      // ASP: trust the vouch service's AUTHORITATIVE leaf list (canonical order),
+      // not RPC-event reconstruction — immune to event-aging. Pool: still
+      // reconstruct from events + overlay our own notes (no authoritative store;
+      // known production-needs item — a real indexer).
       const myAspIndex: number = typeof vouch.index === "number" ? vouch.index : -1;
+      const vouchLeaves: string[] = Array.isArray(vouch.leaves) ? vouch.leaves.map(String) : [];
       const [aspLeaves, fullPool] = await Promise.all([
-        chain.resolveAspLeaves(aspLeaf, myAspIndex),
+        chain.resolveAspLeavesAuthoritative(vouchLeaves),
         chain.resolvePoolLeaves(w.notes),
       ]);
       const noteAspIndex = myAspIndex >= 0 ? myAspIndex : aspLeaves.indexOf(aspLeaf);

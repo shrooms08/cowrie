@@ -523,8 +523,33 @@ export async function resolvePoolLeaves(
 }
 
 /**
- * Resolve the ASP leaf set so its root equals the LIVE asp root exactly (the
- * ASP keeps no root history). Overlays the wallet's own allowlist leaf.
+ * DURABLE ASP resolution: trust the vouch service's AUTHORITATIVE leaf list.
+ *
+ * The vouch route (/api/asp-vouch) maintains the canonical allowlist order (leaf
+ * 0 = the global dummy, then each vouched leaf appended in on-chain `admin_add`
+ * order) and returns it with every vouch. Because that ordering IS the on-chain
+ * leaf order, its Merkle root equals the live ASP root — so we do NOT reconstruct
+ * the ASP tree from RPC events. This makes the ASP immune to event-aging (the
+ * failure mode where early LeafAdded events, incl. dummy@0, scroll out of the
+ * ~8000-ledger RPC event window and reconstruction becomes impossible).
+ *
+ * We still confirm the provided list's root matches the live root — retrying only
+ * to let the JUST-added leaf propagate to the read — so a stale/corrupt store is
+ * caught rather than silently producing a bad proof.
+ */
+export async function resolveAspLeavesAuthoritative(leaves: string[]): Promise<string[]> {
+  const expected = await merkleRootOf(leaves);
+  for (let t = 0; t < 10; t++) {
+    if ((await aspRoot()) === expected) return leaves;
+    await sleep(2500);
+  }
+  throw new Error("ASP leaf list does not match the live root — the allowlist store may be out of sync");
+}
+
+/**
+ * Legacy ASP resolution via RPC event reconstruction (fragile once early leaf
+ * events age out of RPC retention). Kept for reference; the wallet now uses
+ * resolveAspLeavesAuthoritative with the vouch service's leaf list.
  */
 export async function resolveAspLeaves(myLeaf: string, myIndex: number): Promise<string[]> {
   const live = await aspRoot();

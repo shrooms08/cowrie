@@ -1,0 +1,19 @@
+{
+  "phase": "R7 — fresh small-tree pool + ASP redeploy (event-aging fix) + durable ASP resolution",
+  "date": "2026-07-01",
+  "reason": "prior pool CBTOBHYH / ASP CBFTHBUN accumulated 30/12 leaves across test runs; early leaf events (pool 0-5, ASP 0-4 incl dummy@0) aged out of the public RPC ~8000-ledger event window -> tree reconstruction impossible -> unknown-pool-root / ASP-root-mismatch / spend 'timeouts'. RPC itself was healthy.",
+  "new_pool": "CC3CYAIPGC6GOQNYZWLJEZ3OJ2HKPLHHLJXBIJLTKWF6BUY76LDZ3FRI",
+  "new_asp": "CCD33Z46QFHZOA4FCUM6DND7H6WGUK5VSX2YUZV5PUVXRKY3QB3F3UPL",
+  "verifier_reused": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "usdc_sac_reused": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "read_verify_before_rewire": {
+    "pool_root_eq_offchain_empty_tree": "2302223575749844940221218608817648865122641281382153518325924961250440546344 (MATCH)",
+    "pool_usdc": "CBIELTK6... (correct)",
+    "pool_dummy_nullifier": "18840403724... (correct)",
+    "asp_root_dummy_only": "4880490547... (correct)",
+    "asp_blocklist_root": "6028266247... (correct)"
+  },
+  "retired": "pool CBTOBHYH... / asp CBFTHBUN... (bloated, event-aged; no longer referenced by config)",
+  "durable_asp_fix": "wallet now resolves the ASP tree via the vouch service's authoritative leaf list (resolveAspLeavesAuthoritative) instead of RPC-event reconstruction -> ASP immune to event-aging. Pool still reconstructs from events + local overlay (production-needs: a real indexer).",
+  "vouch_store_reset": ".cowrie-asp-leaves.json reset to [dummy@0] for the fresh ASP"
+}
