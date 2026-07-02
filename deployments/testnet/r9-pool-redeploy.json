@@ -1,0 +1,21 @@
+{
+  "phase": "R9 — fresh pool redeploy (event-aging + cross-device test bloat); ASP kept",
+  "date": "2026-07-02",
+  "reason": "Live pool CBWVWCZI failed with 'could not resolve a known pool root' after cross-device testing (merchant on phone, paid from laptop) + multiple test payments — the pool commitment tree accrued enough leaves that early Deposit/ChangeNote events aged out of the public RPC ~8000-ledger event window, so resolvePoolLeaves could not rebuild a tree whose root the contract accepts.",
+  "new_pool": "CDOT3VHSWZFCY3LLQBL3PDZ6DDSCYCMHTRDQL2NY75GTM5BW7SRM74XO",
+  "deploy_tx": "24fb627535c4b5408e8638f2b76beb2f04e3b9e7b36d7156488c8e58bf1bb914",
+  "wasm": "contracts/target/wasm32v1-none/release/cowrie_pool_usdc.wasm (unchanged since Jul 1 07:00 commit 4bd58c9 — identical code to retired pool)",
+  "deployer": "killswitch GBIL34JMHYXKG3EGNBCYYRMHPWPYUVYY7WH7SBB6SP5LXNMENVCQVZ5C",
+  "asp_kept": "CCD33Z46QFHZOA4FCUM6DND7H6WGUK5VSX2YUZV5PUVXRKY3QB3F3UPL (ASP resolved via authoritative on-chain leaf read => immune to event-aging)",
+  "verifier_reused": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "usdc_sac_reused": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "retired_pool": "CBWVWCZI2CN7PIC7UR7AHJFD4GT3UVCGLWDW3B63W6AWVTE2IMTHUZ5B (superseded)",
+  "read_verify_before_rewire": {
+    "pool_get_root_eq_offchain_empty_tree": "2302223575749844940221218608817648865122641281382153518325924961250440546344 (MATCH)",
+    "pool_usdc": "CBIELTK6... (MATCH)",
+    "pool_dummy_nullifier": "18840403724275375087806719211480066574406617902219092288312412124610213555779 (MATCH)"
+  },
+  "config_change": "POOL_ID only; ASP_ID unchanged",
+  "wallet_reset_note": "Old demo wallets hold notes that reference the retired pool tree and must be reset ('reset demo' / fresh key). A fresh wallet deposits + spends cleanly on the new pool.",
+  "live_spend_tx": "SEE_BELOW"
+}
