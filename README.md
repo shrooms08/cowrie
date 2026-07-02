@@ -148,10 +148,9 @@ Headless proofs of each loop (against testnet): `node web/scripts/ui-e2e.mjs`
 ### Rebuilding the crypto (optional)
 
 To recompile from source you need Rust 1.94 + `wasm32v1-none`, circom 2.2,
-snarkjs, stellar CLI, and `wasm-pack`. See [PLAN.md](./PLAN.md) §0 and the phase
-writeups: [PHASE1](./PHASE1.md) (circuits + setup), [PHASE2](./PHASE2.md)
-(contracts), [PHASE3](./PHASE3.md) (wallet), [PHASE4](./PHASE4.md) (merchant +
-anchor).
+snarkjs, stellar CLI, and `wasm-pack`. See the phase writeups:
+[PHASE1](./PHASE1.md) (circuits + setup), [PHASE2](./PHASE2.md) (contracts),
+[PHASE3](./PHASE3.md) (wallet), [PHASE4](./PHASE4.md) (merchant + anchor).
 
 ---
 
