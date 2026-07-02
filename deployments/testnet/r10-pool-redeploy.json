@@ -16,5 +16,5 @@
     "pool_dummy_nullifier": "18840403724275375087806719211480066574406617902219092288312412124610213555779 (MATCH)"
   },
   "config_change": "POOL_ID only; ASP_ID unchanged",
-  "live_spend_tx": "SEE_BELOW"
+  "live_spend_tx": "35f5dccaddb3e353267cdafc34b46c0d2b7a97baf5ccb50b495bda7ba74dd8d2 (CBIMRNFZ.spend, SUCCESS)"
 }
