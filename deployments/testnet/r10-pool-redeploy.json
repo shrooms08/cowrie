@@ -1,0 +1,20 @@
+{
+  "phase": "R10 — fresh pool redeploy (mid-demo tree bloat); ASP kept",
+  "date": "2026-07-02",
+  "reason": "Live pool CDOT3VHS hit 'could not resolve a known pool root' mid-recording after this session's payments grew the tree past reconstruction.",
+  "new_pool": "CBIMRNFZJLDFX7C7GE5C7Y54YBFR4E55NYUQVYTVIHYJBDP3F3VKURI3",
+  "deploy_tx": "919db35e9a07d3ea4650f7e57540e533b233f7552c2384f45f71d542d0982c67",
+  "wasm": "contracts/target/wasm32v1-none/release/cowrie_pool_usdc.wasm (unchanged since commit 4bd58c9)",
+  "deployer": "killswitch GBIL34JMHYXKG3EGNBCYYRMHPWPYUVYY7WH7SBB6SP5LXNMENVCQVZ5C",
+  "asp_kept": "CCD33Z46QFHZOA4FCUM6DND7H6WGUK5VSX2YUZV5PUVXRKY3QB3F3UPL",
+  "verifier_reused": "CCKJHEGDDCBYYZFNK5W2Q7G2FAR7ASMQGYOOTXZOMSAEI6O37WEVK65T",
+  "usdc_sac_reused": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+  "retired_pool": "CDOT3VHSWZFCY3LLQBL3PDZ6DDSCYCMHTRDQL2NY75GTM5BW7SRM74XO (R9, superseded)",
+  "read_verify_before_rewire": {
+    "pool_get_root_eq_offchain_empty_tree": "2302223575749844940221218608817648865122641281382153518325924961250440546344 (MATCH)",
+    "pool_usdc": "CBIELTK6... (MATCH)",
+    "pool_dummy_nullifier": "18840403724275375087806719211480066574406617902219092288312412124610213555779 (MATCH)"
+  },
+  "config_change": "POOL_ID only; ASP_ID unchanged",
+  "live_spend_tx": "SEE_BELOW"
+}
