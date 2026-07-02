@@ -17,5 +17,5 @@
   },
   "config_change": "POOL_ID only; ASP_ID unchanged",
   "wallet_reset_note": "Old demo wallets hold notes that reference the retired pool tree and must be reset ('reset demo' / fresh key). A fresh wallet deposits + spends cleanly on the new pool.",
-  "live_spend_tx": "SEE_BELOW"
+  "live_spend_tx": "233a5ea23a909171650e9f1495fb2a13cd25bfc12bda3f5de443557924436098 (invoked CDOT3VHS.spend, SUCCESS, ledger 3392271 — full pay flow on cowrie-cyan.vercel.app)"
 }
